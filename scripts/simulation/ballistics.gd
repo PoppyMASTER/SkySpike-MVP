@@ -42,3 +42,35 @@ static func angle_to_pass(from: Vector2, speed: float, target: Vector2, gravity:
 		return NAN
 	var root := sqrt(disc)
 	return atan((v2 + root) / (gravity * dx)) if high else atan((v2 - root) / (gravity * dx))
+
+
+## Paraboles de service : angle (rad, vers l'avant) et vitesse d'une trajectoire qui part de `from`,
+## passe par `via` (le dessus du filet) puis retombe en `target`. NAN dans les deux champs si les
+## trois points ne forment pas une cloche (par exemple `via` plus bas que la corde).
+## Renvoie {"angle": rad, "speed": m/s}.
+static func through_two_points(from: Vector2, via: Vector2, target: Vector2, gravity: float) -> Dictionary:
+	var u := absf(via.x - from.x)
+	var w := absf(target.x - from.x)
+	var none := {"angle": NAN, "speed": NAN}
+	if u < 1e-3 or w <= u + 1e-3:
+		return none
+	var dv := via.y - from.y
+	var dt := target.y - from.y
+	var k := (dt - w * dv / u) / (w * (u - w))   # y = y0 + m·x − k·x²
+	if k <= 1e-6:
+		return none
+	var m := (dv + k * u * u) / u
+	var vx2 := gravity / (2.0 * k)
+	var vx := sqrt(vx2)
+	return {"angle": atan(m), "speed": vx * sqrt(1.0 + m * m)}
+
+
+## Vitesse pour qu'un tir à l'angle `angle` passe par `target`. NAN si impossible.
+static func speed_for_angle(from: Vector2, angle: float, target: Vector2, gravity: float) -> float:
+	var dx := absf(target.x - from.x)
+	var dy := target.y - from.y
+	var c := cos(angle)
+	var drop := dx * tan(angle) - dy
+	if dx < 1e-3 or drop <= 1e-6 or c <= 1e-6:
+		return NAN
+	return sqrt(gravity * dx * dx / (2.0 * c * c * drop))

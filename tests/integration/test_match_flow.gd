@@ -53,7 +53,16 @@ func test_all_six_characters_take_part_and_blocks_happen() -> void:
 
 func test_rallies_are_not_trivial_and_phases_follow_the_cycle() -> void:
 	var r := _play(2)
-	assert_true(float(r.counts.contacts) / maxi(1, r.counts.points) > 2.0, "plus de 2 contacts par point en moyenne")
+	var contacts := 0
+	var points := 0
+	var serve_faults := 0
+	for s: int in SEEDS:
+		contacts += _play(s).counts.contacts
+		points += _play(s).counts.points
+		serve_faults += _play(s).counts.serve_faults
+	# moyenne sur plusieurs matchs : un seul match est trop variable (services précis depuis le J4.1a)
+	assert_true(float(contacts) / maxi(1, points) > 2.3, "plus de 2,3 contacts par point en moyenne (%.2f)" % (float(contacts) / maxi(1, points)))
+	assert_true(float(serve_faults) / maxi(1, points) < 0.05, "moins de 5 %% de fautes de service de l'IA (%d sur %d points)" % [serve_faults, points])
 	var phases: Array[String] = []
 	for line in r.events.split("\n"):
 		if line.contains("PHASE_CHANGED"):

@@ -60,6 +60,22 @@ Qualité `q = clamp(1 − w_t·e_t² − w_s·e_s², 0, 1)` avec `e_t` = erreur 
 centre / rayon. Trop tôt = trajectoire plus haute et plus courte, trop tard = plus basse. Le mode assisté
 multiplie les tolérances et corrige la direction dans une limite d'angle réglable.
 
+## Service [Implémenté au J4.1a]
+
+1. **Tenue** : le serveur tient le ballon derrière la ligne de fond (`SERVE_HOLD`). La prévision montre l'arc du lancer selon la direction tenue.
+2. **Lancer** (touche de service) : la direction tenue à cet instant donne la dérive horizontale du ballon
+   (`serve_toss_drift` × axe, dans le sens du monde). Le ballon monte à `serve_toss_speed`.
+3. **Pendant le lancer** : le serveur peut se replacer sous le ballon (`serve_toss_move_factor` de sa vitesse de course),
+   sans jamais franchir la ligne de fond. Saut optionnel (touche de saut).
+4. **Frappe** (touche de service) : fenêtre de contact comme les autres coups. En visée assistée, la direction tenue
+   pendant la frappe règle la profondeur visée entre `assist_ratio_min` et `assist_ratio_max` du camp adverse, par la
+   vitesse de la balle (trajectoire au-dessus du filet avec `assist_net_clearance`). La qualité (timing, placement)
+   plafonne la vitesse : un service mal frappé retombe court ou dans le filet. En visée manuelle : angle seul (`aim_range`).
+5. **Prévisualisation** (serveur humain seulement) : points blancs = arc du lancer ; cercle jaune = zone de frappe ;
+   points verts/rouges = trajectoire après la frappe ; barre au sol = atterrissage ± 1 écart-type d'angle ; texte = qualité,
+   « FILET » ou « HORS TERRAIN ». Hypothèse : « si tu frappes maintenant » (en tenue : au meilleur moment). Elle ne
+   prévoit pas le déplacement du serveur après l'appui.
+
 ## Contre [Prévu J3]
 
 Écart = qualité de bloc − qualité d'attaque + biais : au-dessus de `seuil_contre` contre gagnant, entre les

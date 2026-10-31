@@ -41,6 +41,8 @@ func lock_to(x: float) -> void:
 	_locked = true
 	_serving = false
 	_auto_x = x
+	if state in [Enums.ActionState.SERVE_HOLD, Enums.ActionState.SERVE_TOSS, Enums.ActionState.SERVE_HIT]:
+		_enter(Enums.ActionState.FREE)   # service raté : le serveur ne doit pas rester figé dans son geste
 
 
 func unlock() -> void:
@@ -60,6 +62,11 @@ func begin_serve() -> void:
 	_locked = false
 	_serving = true
 	_enter(Enums.ActionState.SERVE_HOLD)
+
+
+## Direction tenue au dernier tick (-1..1) : la visée du contact et du lancer de service.
+func aim_axis() -> float:
+	return _axis
 
 
 ## Position de la main qui tient le ballon avant le lancer.
@@ -162,7 +169,9 @@ func _handle_input(intent: PlayerIntent, ctx: SimContext) -> void:
 			if intent.serve_pressed:
 				ctx.ball_held = false
 				ctx.ball.position = serve_hold_position(ctx.params)
-				ctx.ball.velocity = Vector2(0.0, ctx.params.get_value(ParamIds.SERVE_TOSS_SPEED))
+				# lancer contrôlé : la direction tenue (axe monde) donne la dérive horizontale du ballon
+				ctx.ball.velocity = Vector2(intent.move_axis * ctx.params.get_value(ParamIds.SERVE_TOSS_DRIFT),
+					ctx.params.get_value(ParamIds.SERVE_TOSS_SPEED))
 				ctx.emit(MatchEvent.Type.SERVE_TOSSED, {"slot": slot})
 				_enter(Enums.ActionState.SERVE_TOSS)
 		Enums.ActionState.SERVE_TOSS:
@@ -232,7 +241,7 @@ func _move(intent: PlayerIntent, ctx: SimContext) -> bool:
 		Enums.ActionState.BLOCK_AIR:
 			air_grip *= p.get_value(ParamIds.BLOCK_AIR_CONTROL_MULT)
 		Enums.ActionState.SERVE_TOSS:
-			max_speed = 0.0
+			max_speed *= p.get_value(ParamIds.SERVE_TOSS_MOVE_FACTOR)
 	var near := ctx.court.net_half_thickness + p.get_value(ParamIds.PLAYER_HALF_WIDTH)
 	var far := ctx.court.half_length + ctx.court.out_margin
 	var x_min := -far if facing > 0 else near

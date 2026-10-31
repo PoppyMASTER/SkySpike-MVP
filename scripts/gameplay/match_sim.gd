@@ -110,6 +110,8 @@ func state() -> MatchState:
 	s.point_winner = r.point_winner
 	s.fault_text = r.fault_text
 	s.human_slot = ctx.human_slot
+	if _flow and ctx.human_slot == r.server_slot and not r.served:
+		s.serve_preview = ServePreview.compute(actors[r.server_slot], ctx)
 	return s
 
 

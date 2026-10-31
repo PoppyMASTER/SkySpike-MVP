@@ -9,6 +9,8 @@ const COLOR_ZONE := Color(1.0, 0.81, 0.24)
 const COLOR_HUMAN := Color("ffcf3c")
 const COLOR_BONE := Color("7be0a8")
 const COLOR_PIVOT := Color("ff5a7a")
+const COLOR_PREVIEW_OK := Color("7be0a8")
+const COLOR_PREVIEW_BAD := Color("ff6b5e")
 
 var view: MatchView
 
@@ -20,6 +22,8 @@ func _draw() -> void:
 	var k := view.pixels_per_meter()
 	for i in state.players.size():
 		_draw_player_marks(i, state.players[i], k)
+	if state.serve_preview != null:
+		_draw_serve_preview(state.serve_preview, k)
 	_draw_ball(k)
 	_draw_scoreboard(get_viewport_rect().size)
 	if view.preview_clip != null:
@@ -71,6 +75,37 @@ func _draw_preview_info() -> void:
 	var text := "TEST D'ANIMATION : %s (%s)\n%.2f / %.2f s · %d %% · ×%.2f%s" % [f.clip_id, f.action, f.clip_time, f.duration,
 		roundi(f.progress() * 100.0), view.preview_speed, "" if view.preview_playing else " · pause"]
 	draw_multiline_string(view.font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, -1, Color(0.75, 1.0, 0.85))
+
+
+## Prévision du service : arc du lancer (points blancs), zone et point de frappe, trajectoire
+## après la frappe (verte si elle passe le filet, rouge sinon) et zone d'atterrissage (± 1 écart-type).
+func _draw_serve_preview(pv: ServePreview, k: float) -> void:
+	_draw_dotted(pv.toss_path, Color(1, 1, 1, 0.55), 2.5)
+	if not pv.can_hit:
+		var hint := view.to_screen(pv.toss_path[pv.toss_path.size() / 2]) if pv.toss_path.size() > 0 else Vector2.ZERO
+		draw_string(view.font, hint + Vector2(14, 0), "hors de portée", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 0.55, 0.5))
+		return
+	var good := pv.lands_in
+	var color := COLOR_PREVIEW_OK if good else COLOR_PREVIEW_BAD
+	_draw_zone(pv.zone_center, pv.zone_radius, k, true)
+	var hit := view.to_screen(pv.hit_ball)
+	draw_arc(hit, maxf(4.0, 0.105 * k), 0.0, TAU, 16, Color.WHITE, 1.5, true)
+	_draw_dotted(pv.flight_path, color, 3.0)
+	var ground := view.to_screen(Vector2(pv.landing_min, 0.0))
+	var ground_end := view.to_screen(Vector2(pv.landing_max, 0.0))
+	draw_line(ground, ground_end, Color(color, 0.85), 5.0)
+	draw_circle(view.to_screen(Vector2(pv.landing_x, 0.0)), 6.0, color)
+	var text := "qualité %d %%" % roundi(pv.quality * 100.0)
+	if not pv.clears_net:
+		text += " · FILET"
+	elif not pv.lands_in:
+		text += " · HORS TERRAIN"
+	draw_string(view.font, hit + Vector2(16, -10), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, color)
+
+
+func _draw_dotted(path: PackedVector2Array, color: Color, radius: float) -> void:
+	for point in path:
+		draw_circle(view.to_screen(point), radius, color)
 
 
 func _draw_ball(k: float) -> void:

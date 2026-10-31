@@ -31,6 +31,8 @@ var winner := -1
 var point_winner := -1
 var fault_text := ""
 var human_slot := -1
+## Prévision du service du joueur humain (null si ce n'est pas à lui de servir). Hors empreinte.
+var serve_preview: ServePreview
 
 
 ## Texte stable et exact (flottants en hexadécimal) pour comparer deux exécutions.

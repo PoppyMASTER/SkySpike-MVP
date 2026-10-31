@@ -18,6 +18,7 @@ var _timing_error: Array[float] = []
 var _feint: Array[bool] = []
 var _block: Array[bool] = []
 var _stats_apex: Array[float] = []
+var _serve_aim: Dictionary = {}   # slot -> direction tenue à la frappe du service (tirée au lancer)
 
 
 func _init(param_store: ParamStore, seed_value: int, tick_dt: float, human := -1) -> void:
@@ -60,12 +61,18 @@ func _decide(slot: int, now: MatchState, seen: MatchState) -> PlayerIntent:
 	var me := now.players[slot]
 	if now.phase == Enums.Phase.SERVE_PREP:
 		var wait: float = params.get_value(ParamIds.AI_SERVE_DELAY)
-		return PlayerIntent.make(0.0, false, false, false, false, true) \
-			if slot == now.server_slot and me.action == Enums.ActionState.SERVE_HOLD and now.phase_time >= wait else PlayerIntent.make()
+		if slot == now.server_slot and me.action == Enums.ActionState.SERVE_HOLD and now.phase_time >= wait:
+			# comme un humain : la direction tenue au lancer donne la dérive du ballon (tirage unique par service)
+			var toss := clampf(_rng.gaussian_tagged(MatchRng.STREAM_AI, "serve_toss_%d" % slot, params.get_value(ParamIds.AI_SERVE_TOSS_SPREAD)), -1.0, 1.0)
+			_serve_aim[slot] = clampf(_rng.gaussian_tagged(MatchRng.STREAM_AI, "serve_aim_%d" % slot, params.get_value(ParamIds.AI_SERVE_AIM_SPREAD)), -1.0, 1.0)
+			return PlayerIntent.make(toss, false, false, false, false, true)
+		return PlayerIntent.make()
 	if now.phase != Enums.Phase.BALL_LIVE:
 		return PlayerIntent.make()
+	if me.action == Enums.ActionState.SERVE_HIT:   # la direction tenue pendant la frappe = profondeur visée
+		return PlayerIntent.make(_serve_aim.get(slot, 0.0))
 	if me.action == Enums.ActionState.SERVE_TOSS:
-		return _ground_action(slot, ContactSpec.SERVE, now, seen, true)
+		return _ground_action(slot, ContactSpec.SERVE, now, now, false, true)   # son propre lancer : ni délai ni erreur de perception
 	var plan := _plan(me.team, now, seen)
 	if plan.slot == slot:
 		match plan.action:
@@ -122,7 +129,7 @@ func _plan(team: int, now: MatchState, seen: MatchState) -> Dictionary:
 
 # ------------------------------------------------------------------ actions
 ## Réception, passe ou service : se placer sous l'interception et appuyer au bon moment.
-func _ground_action(slot: int, kind: StringName, now: MatchState, seen: MatchState, stay: bool) -> PlayerIntent:
+func _ground_action(slot: int, kind: StringName, now: MatchState, seen: MatchState, stay: bool, own_ball := false) -> PlayerIntent:
 	var me := now.players[slot]
 	var spec := ContactSpec.of(kind, params)
 	var g: float = params.get_value(ParamIds.BALL_GRAVITY)
@@ -132,7 +139,7 @@ func _ground_action(slot: int, kind: StringName, now: MatchState, seen: MatchSta
 		t = Ballistics.time_to_height(seen.ball_position.y, seen.ball_velocity.y, g, seen.ball_radius + 0.05)
 	if t < 0.0:
 		return _go_home(slot, now)
-	var x_int := seen.ball_position.x + seen.ball_velocity.x * t + _pred_error[slot]
+	var x_int := seen.ball_position.x + seen.ball_velocity.x * t + (0.0 if own_ball else _pred_error[slot])
 	var target_x := me.position.x if stay else x_int - me.facing * spec.dx
 	var remaining := t - lag
 	var press := me.action == Enums.ActionState.FREE or me.action == Enums.ActionState.SERVE_TOSS

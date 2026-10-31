@@ -2115,6 +2115,66 @@
    "integer": false,
    "step": 0.01,
    "description": "La visée assistée (et l'IA) relève l'angle pour passer au moins à cette hauteur au-dessus du bord du filet."
+  },
+  {
+   "id": "serve_toss_drift",
+   "group": "contact",
+   "label": "Service : dérive du lancer",
+   "unit": "m/s",
+   "default": 1.6,
+   "min": 0.0,
+   "max": 4.0,
+   "experimental_min": 0.0,
+   "experimental_max": 6.0,
+   "apply": "immediate",
+   "integer": false,
+   "step": 0.05,
+   "description": "Vitesse horizontale donnée au ballon au lancer quand la direction est tenue à fond : vers l'avant (le filet) ou vers l'arrière."
+  },
+  {
+   "id": "serve_toss_move_factor",
+   "group": "contact",
+   "label": "Service : déplacement pendant le lancer",
+   "unit": "",
+   "default": 0.4,
+   "min": 0.0,
+   "max": 1.0,
+   "experimental_min": 0.0,
+   "experimental_max": 1.0,
+   "apply": "immediate",
+   "integer": false,
+   "step": 0.05,
+   "description": "Part de la vitesse de course permise au serveur pendant que le ballon monte, pour se replacer sous lui (derrière la ligne de fond)."
+  },
+  {
+   "id": "ai_serve_toss_spread",
+   "group": "ai",
+   "label": "IA : variation du lancer",
+   "unit": "",
+   "default": 0.25,
+   "min": 0.0,
+   "max": 1.0,
+   "experimental_min": 0.0,
+   "experimental_max": 1.0,
+   "apply": "immediate",
+   "integer": false,
+   "step": 0.01,
+   "description": "Écart-type de la direction de lancer de l'IA (tirage à chaque service, flux ai)."
+  },
+  {
+   "id": "ai_serve_aim_spread",
+   "group": "ai",
+   "label": "IA : variation de la profondeur du service",
+   "unit": "",
+   "default": 0.5,
+   "min": 0.0,
+   "max": 1.0,
+   "experimental_min": 0.0,
+   "experimental_max": 1.0,
+   "apply": "immediate",
+   "integer": false,
+   "step": 0.01,
+   "description": "Écart-type de la direction tenue par l'IA au moment de frapper son service (court ou long), tirée à chaque service."
   }
  ]
 }
