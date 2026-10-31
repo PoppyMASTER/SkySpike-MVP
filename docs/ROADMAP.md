@@ -9,7 +9,7 @@ et une validation de Djebril avant le suivant.
 | J2 Physique | Terrain, filet, collisions balayées, un joueur humain (course, saut, contact), entrées, réglages en direct | 5 (partiel), 11 (partiel) | **Validé le 31/10/2026** |
 | J3 Gameplay 3v3 | Six joueurs, postes, IA de base, rallye, service, réception, passe, smash, feinte, contre, score | 2, 3, 4, 5, 11 | **Validé le 31/10/2026** |
 | J4 Animation | Rig `Skeleton2D` partagé (17 os), 11 clips JSON (10 standards + marteau à deux mains), lecteur, fondus, repli, morphologie visuelle, mannequin anthracite, outils de debug | 6, 7, 8, 12 | **Livré le 31/10/2026, en attente de validation** |
-| **J4.1a Service refondu** | Lancer contrôlé, prévisualisation de trajectoire, profondeur réglée par la direction tenue, IA qui lance et vise, correction du serveur figé | 2, 3 | **Livré le 31/10/2026, en attente de validation (playtest)** |
+| **J4.1a Service refondu** | Lancer contrôlé, prévisualisation de trajectoire, profondeur réglée par la direction tenue, IA qui lance et vise, correction du serveur figé | 2, 3 | **Principe validé en 3 étapes le 31/10/2026 ; étape A livrée (en attente de validation), étapes B et C à faire** |
 | J4.1b à J4.1e | Retournement automatique, plongeon, IA alliée et adverse, animations énergiques (voir DECISIONS) | 2, 3, 6, 7 | à faire, dans cet ordre |
 | J5 Lisibilité et sandbox | Traînée et prévision, caméra, panneau complet, presets, rapport de session, rejouer un rallye | 9, 10 | à faire |
 | J6 Stabilisation | Tests complets, mesures de performance PC, guide de playtest, limites, backlog | 13 | à faire |

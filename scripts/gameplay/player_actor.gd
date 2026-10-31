@@ -172,21 +172,27 @@ func _handle_input(intent: PlayerIntent, ctx: SimContext) -> void:
 		Enums.ActionState.SERVE_HOLD:
 			_charge_toss(intent, ctx)
 		Enums.ActionState.SERVE_TOSS:
-			if intent.jump_pressed:   # le service se frappe en l'air : il faut sauter
+			# Verrou anti double appui : l'appui qui a lancé le ballon ne peut pas le frapper aussitôt.
+			if state_time < ctx.params.get_value(ParamIds.SERVE_LOCKOUT_S):
+				return
+			if intent.serve_pressed:   # frappe au sol, après un lancer court
+				_begin_window(ctx, ContactSpec.SERVE, Enums.ActionState.SERVE_HIT)
+			elif intent.jump_pressed:   # ou saut, puis frappe en l'air
 				_do_jump(ctx, Enums.ActionState.SERVE_JUMP)
 		Enums.ActionState.SERVE_JUMP:
-			if intent.serve_pressed:
+			# Espace (2e appui) et L partagent la même fenêtre de contact : un seul déclenchement possible.
+			if intent.serve_pressed or intent.jump_pressed:
 				_begin_window(ctx, ContactSpec.SERVE, Enums.ActionState.SERVE_HIT)
 
 
 ## Tenue du ballon : L maintenu charge le lancer, relâcher le lance (plus la charge est longue, plus il monte).
 func _charge_toss(intent: PlayerIntent, ctx: SimContext) -> void:
-	if not _toss.update(intent, ctx.dt, ctx.params):
+	if _toss.update(intent, ctx.dt, ctx.params) != ServeCharge.Result.TOSS:
 		return
 	ctx.ball_held = false
 	ctx.ball.position = serve_hold_position(ctx.params)
 	ctx.ball.velocity = _toss.toss_velocity(ctx.params, facing)
-	ctx.emit(MatchEvent.Type.SERVE_TOSSED, {"slot": slot, "charge": snappedf(_toss.fraction(ctx.params), 0.001)})
+	ctx.emit(MatchEvent.Type.SERVE_TOSSED, {"slot": slot, "charge": snappedf(_toss.fraction(ctx.params), 0.001), "tap": _toss.is_tap(ctx.params)})
 	_toss.reset()
 	_enter(Enums.ActionState.SERVE_TOSS)
 

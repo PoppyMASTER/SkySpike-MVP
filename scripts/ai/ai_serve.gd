@@ -11,6 +11,8 @@ var _planned := false
 var _hold_time := 0.0
 var _held_for := 0.0
 var _aim := 0.0
+## Service au sol de ce service : appui bref, pas de saut.
+var _ground := false
 
 
 func _init(params: ParamStore, rng: MatchRng, tick_seconds: float) -> void:
@@ -35,7 +37,7 @@ func decide(slot: int, now: MatchState, apex: float, timing_error: float) -> Pla
 		Enums.ActionState.SERVE_HOLD:
 			return _hold(now)
 		Enums.ActionState.SERVE_TOSS:
-			return _toss(me, now, apex)
+			return _toss(me, now, apex, timing_error)
 		Enums.ActionState.SERVE_JUMP:
 			return _strike(me, now, timing_error)
 		Enums.ActionState.SERVE_HIT:   # la direction tenue pendant la frappe = profondeur visée
@@ -50,7 +52,8 @@ func _hold(now: MatchState) -> PlayerIntent:
 	if not _planned:
 		var wanted := clampf(_params.get_value(ParamIds.AI_SERVE_CHARGE) + _rng.gaussian_tagged(MatchRng.STREAM_AI, "serve_charge", _params.get_value(ParamIds.AI_SERVE_CHARGE_SPREAD)), 0.0, 1.0)
 		_aim = clampf(_rng.gaussian_tagged(MatchRng.STREAM_AI, "serve_aim", _params.get_value(ParamIds.AI_SERVE_AIM_SPREAD)), -1.0, 1.0)
-		_hold_time = wanted * charge_time
+		_ground = _rng.randf_tagged(MatchRng.STREAM_AI, "serve_ground") < _params.get_value(ParamIds.AI_SERVE_GROUND_CHANCE)
+		_hold_time = 0.0 if _ground else wanted * charge_time   # appui bref (< seuil) = lancer bas
 		_held_for = 0.0
 		_planned = true
 		return PlayerIntent.make(0.0, false, false, false, false, true, true)   # appui : la charge commence
@@ -62,7 +65,7 @@ func _hold(now: MatchState) -> PlayerIntent:
 
 
 ## Ballon en l'air : se placer sous lui et sauter pour que le sommet du saut tombe à sa rencontre.
-func _toss(me: PlayerSnapshot, now: MatchState, apex: float) -> PlayerIntent:
+func _toss(me: PlayerSnapshot, now: MatchState, apex: float, timing_error: float) -> PlayerIntent:
 	var spec := ContactSpec.of(ContactSpec.SERVE, _params)
 	var g: float = _params.get_value(ParamIds.BALL_GRAVITY)
 	var gp: float = _params.get_value(ParamIds.PLAYER_GRAVITY)
@@ -76,6 +79,9 @@ func _toss(me: PlayerSnapshot, now: MatchState, apex: float) -> PlayerIntent:
 	var gap := meet_x - me.facing * spec.dx - me.position.x
 	if absf(gap) > _params.get_value(ParamIds.AI_POSITION_TOL):
 		axis = clampf(gap / 0.4, -1.0, 1.0)
+	if _ground:   # service au sol : même placement, puis la frappe part quand le ballon passe dans la zone
+		var hit := _strike(me, now, timing_error)
+		return PlayerIntent.make(axis, false, false, false, false, hit.serve_pressed, hit.serve_held)
 	return PlayerIntent.make(axis, jump_in <= _dt)
 
 

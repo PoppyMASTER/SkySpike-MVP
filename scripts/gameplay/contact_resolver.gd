@@ -16,26 +16,30 @@ static func resolve(spec: ContactSpec, actor: PlayerActor, ctx: SimContext, elap
 	var plan := plan_contact(spec, actor, ctx, ctx.ball.position, elapsed, distance, aim, noise)
 	ctx.ball.velocity = ContactModel.exit_velocity(plan.speed, plan.angle, actor.facing)
 	ctx.rally.last_quality = plan.q
-	return {
+	var details := {
 		"slot": actor.slot, "action": String(spec.kind),
 		"q": snappedf(plan.q, 0.001), "e_t": snappedf(plan.e_t, 0.001), "e_s": snappedf(plan.e_s, 0.001),
 		"assist": snappedf(plan.correction, 0.0001), "speed": snappedf(plan.speed, 0.001), "angle": snappedf(plan.angle, 0.0001),
 	}
+	if spec.kind == ContactSpec.SERVE:
+		details["serve_kind"] = String(plan.serve_kind)
+	return details
 
 
 ## Calcule qualité, vitesse et angle de sortie d'un contact SANS rien modifier : c'est la seule
 ## formule, partagée par le contact réel (`resolve`) et la prévisualisation du service.
 ## `ball_at` = position du ballon au contact ; `noise` = bruit d'angle déjà tiré (0 pour une prévision).
 static func plan_contact(spec: ContactSpec, actor: PlayerActor, ctx: SimContext, ball_at: Vector2, elapsed: float,
-		distance: float, aim: float, noise: float) -> Dictionary:
+		distance: float, aim: float, noise: float, rise := -1.0) -> Dictionary:
 	var p := ctx.params
+	var kind := serve_kind(actor, p, actor.body.position.y if rise < 0.0 else rise) if spec.kind == ContactSpec.SERVE else &""
 	var tolerance := spec.tolerance
 	if ctx.is_human(actor.slot) and _assisted(p):
 		tolerance *= p.get_value(ParamIds.ASSIST_TOLERANCE_MULT)
 	var e_t := ContactModel.time_error(elapsed, spec.ideal, tolerance)
 	var e_s := ContactModel.space_error(distance, spec.radius)
 	var q := ContactModel.quality(e_t, e_s, p.get_value(ParamIds.CONTACT_W_TIME), p.get_value(ParamIds.CONTACT_W_SPACE))
-	var speed := ContactModel.speed(_top_speed(spec.kind, actor, p), q, p.get_value(ParamIds.QUALITY_SPEED_FLOOR))
+	var speed := ContactModel.speed(_top_speed(spec.kind, actor, p, kind), q, p.get_value(ParamIds.QUALITY_SPEED_FLOOR))
 	var shift: float = p.get_value(ParamIds.TIMING_ANGLE_SHIFT)
 	var base: float = p.get_value(BASE_ANGLE[spec.kind])
 	var max_correction := _max_correction(ctx, actor.slot, p)
@@ -60,7 +64,22 @@ static func plan_contact(spec: ContactSpec, actor: PlayerActor, ctx: SimContext,
 		angle = clampf(natural + correction + noise, -ContactModel.ANGLE_LIMIT, ContactModel.ANGLE_LIMIT)
 	else:
 		angle = ContactModel.exit_angle(base, e_t, shift, aim, p.get_value(ParamIds.AIM_RANGE), noise)
-	return {"q": q, "e_t": e_t, "e_s": e_s, "speed": speed, "angle": angle, "correction": correction}
+	return {"q": q, "e_t": e_t, "e_s": e_s, "speed": speed, "angle": angle, "correction": correction, "serve_kind": kind}
+
+
+const SERVE_GROUND := &"ground"
+const SERVE_FLOAT := &"float"
+const SERVE_SMASH := &"smash"
+
+
+## Type de service d'après la hauteur des pieds au contact : au sol, flottant (petit saut) ou smashé
+## (au moins `serve_smash_jump_ratio` de la hauteur de saut). Une seule logique de contact pour les trois.
+static func serve_kind(actor: PlayerActor, p: ParamStore, feet_rise: float) -> StringName:
+	var apex := maxf(StatConversion.jump_apex(actor.character.stats, p), 1e-6)
+	var ratio := feet_rise / apex
+	if ratio < 0.05:
+		return SERVE_GROUND
+	return SERVE_SMASH if ratio >= p.get_value(ParamIds.SERVE_SMASH_JUMP_RATIO) else SERVE_FLOAT
 
 
 static func _assisted(p: ParamStore) -> bool:
@@ -74,7 +93,7 @@ static func _max_correction(ctx: SimContext, slot: int, p: ParamStore) -> float:
 	return p.get_value(ParamIds.ASSIST_MAX_ANGLE) if _assisted(p) else 0.0
 
 
-static func _top_speed(kind: StringName, actor: PlayerActor, p: ParamStore) -> float:
+static func _top_speed(kind: StringName, actor: PlayerActor, p: ParamStore, serve := &"") -> float:
 	var stats := actor.character.stats
 	match kind:
 		ContactSpec.RECEIVE:
@@ -84,7 +103,12 @@ static func _top_speed(kind: StringName, actor: PlayerActor, p: ParamStore) -> f
 		ContactSpec.FEINT:
 			return p.get_value(ParamIds.FEINT_SPEED)
 		ContactSpec.SERVE:
-			return StatConversion.serve_speed(stats, p)
+			var top := StatConversion.serve_speed(stats, p)
+			if serve == SERVE_GROUND:
+				return top * p.get_value(ParamIds.SERVE_GROUND_SPEED_MULT)
+			if serve == SERVE_SMASH:
+				return minf(top * p.get_value(ParamIds.SERVE_SMASH_SPEED_MULT), p.get_value(ParamIds.SERVE_SMASH_SPEED_CAP))
+			return top
 	return StatConversion.spike_speed(stats, p)
 
 

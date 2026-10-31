@@ -128,7 +128,7 @@ static func compute(server: PlayerActor, ctx: SimContext) -> ServePreview:
 	out.hit_ball = balls[index]
 	out.zone_center = spec.center(Vector2(x_hit, y_hit), server.facing)
 	var aim := server.aim_axis() * server.facing
-	var plan := ContactResolver.plan_contact(spec, server, ctx, balls[index], elapsed, distance, aim, 0.0)
+	var plan := ContactResolver.plan_contact(spec, server, ctx, balls[index], elapsed, distance, aim, 0.0, y_hit)
 	out.quality = plan.q
 	var sigma := ContactResolver.noise_sigma(ContactSpec.SERVE, server, p)
 	var flight := _fly(ctx, balls[index], plan.speed, plan.angle, server.facing, true)

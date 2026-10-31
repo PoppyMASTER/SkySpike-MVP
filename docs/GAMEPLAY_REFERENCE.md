@@ -60,24 +60,42 @@ Qualité `q = clamp(1 − w_t·e_t² − w_s·e_s², 0, 1)` avec `e_t` = erreur 
 centre / rayon. Trop tôt = trajectoire plus haute et plus courte, trop tard = plus basse. Le mode assisté
 multiplie les tolérances et corrige la direction dans une limite d'angle réglable.
 
-## Service [Implémenté au J4.1a, révisé]
+## Service [Implémenté au J4.1a, étape A]
 
-L sert de touche de passe en jeu et de touche de service pendant la tenue du ballon.
-1. **Tenue** (`SERVE_HOLD`) : appuyer sur L puis le **maintenir** charge le lancer pendant `serve_charge_time`. La prévision montre l'arc
-   du lancer, qui grandit avec la charge, et le meilleur saut possible.
-2. **Lancer** : relâcher L lance le ballon. Hauteur = `serve_toss_speed` (charge nulle) à `serve_toss_speed_max` (charge pleine) ;
-   avance de base vers le filet `serve_toss_forward`. **Aucune direction à tenir.**
-3. **Saut obligatoire** (Espace) : le service ne se frappe pas au sol. Le serveur peut se replacer sous le ballon
-   (`serve_toss_move_factor` de sa vitesse), sans passer la ligne de fond.
-4. **Frappe en l'air** : L, fenêtre de contact comme les autres coups. En visée assistée, la direction tenue pendant la frappe règle la profondeur
-   (de `assist_ratio_min` à `assist_ratio_max` du camp adverse) par la vitesse de la balle, sur une trajectoire au-dessus du filet
-   (`assist_net_clearance`). La qualité (timing, placement) plafonne la vitesse. En visée manuelle : angle seul (`aim_range`).
-5. **Prévisualisation** (serveur humain) : points blancs = arc du lancer ; barre jaune = charge ; cercle = zone de frappe ; points verts ou rouges =
-   trajectoire après la frappe ; barre au sol = atterrissage ± 1 écart-type ; texte = qualité, « FILET » ou « HORS TERRAIN ».
-   Avant le saut elle suppose le meilleur saut possible ; en l'air : « si tu frappes maintenant ».
-6. **Prévision de la balle, en permanence** (tout joueur) : trajectoire pâle jusqu'au sol, anneau d'atterrissage (vert dans les lignes,
-   orange dehors, croix rouge si le ballon s'arrête dans le filet).
-7. Animation du saut de service : provisoire (saut standard). La référence de Djebril viendra la remplacer.
+L sert de touche de passe en jeu et de touche de service pendant la tenue du ballon. Une seule logique de lancer et de contact produit
+les trois services (au sol, flottant, smashé) ; seuls la hauteur du saut et le timing changent. Tous les seuils sont des paramètres du sandbox.
+
+**Machine à états du lancer** (`ServeCharge`, front d'appui, annulation, relâchement) :
+`SERVE_HOLD` (ballon tenu) ─ appui sur L ─► appui en cours ─ relâché avant `serve_tap_max_s` ─► **lancer bas** (`serve_toss_low_speed`, avance `serve_toss_forward_min`) ;
+maintenu au-delà ─► **charge** (0 → 1 en `serve_charge_time`) ─ relâché ─► **lancer haut** (hauteur `serve_toss_speed` → `serve_toss_speed_max`, avance
+`serve_toss_forward_min` → `serve_toss_forward`). K / B pendant l'appui = annulation (le ballon reste tenu, il faut un nouvel appui).
+Un maintien sans front d'appui ne déclenche rien. Aucune direction à tenir.
+
+**Après le lancer** (`SERVE_TOSS`) : le joueur reste libre (déplacement à `serve_toss_move_factor`, jamais devant la ligne de fond). Pendant
+`serve_lockout_s`, les appuis de service sont ignorés (l'appui du lancer ne peut pas frapper). Ensuite :
+- **L** : frappe **au sol** (fenêtre de contact ordinaire) ;
+- **Espace** : saut, puis en l'air **Espace** (2e appui) ou **L** ouvrent la **même** fenêtre de contact (un seul déclenchement possible).
+La frappe n'est jamais automatique : la simulation valide le contact selon la position du ballon, le timing et la qualité.
+
+**Type de service** (`ContactResolver.serve_kind`, d'après la hauteur des pieds au contact, publié dans `CONTACT.serve_kind`) :
+| Type | Condition | Vitesse maximale |
+|---|---|---|
+| au sol | pieds à moins de 5 % de la hauteur de saut | vitesse de service × `serve_ground_speed_mult` |
+| flottant | saut inférieur à `serve_smash_jump_ratio` × hauteur de saut | vitesse de service |
+| smashé | saut d'au moins `serve_smash_jump_ratio` × hauteur de saut | min(vitesse de service × `serve_smash_speed_mult`, **`serve_smash_speed_cap`**) |
+Les vitesses de The Spike ne sont qu'une référence visuelle : le plafond du smash est configurable. La qualité (timing, placement) plafonne encore la vitesse.
+
+**Visée** : en assisté, la direction tenue pendant la frappe règle la profondeur par la vitesse sur une trajectoire au-dessus du filet
+(`assist_net_clearance`, de `assist_ratio_min` à `assist_ratio_max`). Manuel : angle seul (`aim_range`).
+
+**IA** : mêmes commandes qu'un humain (`AiServe`) ; tirage par service (flux `ai`) : au sol avec `ai_serve_ground_chance` (appui bref, frappe au
+passage dans la zone), sinon charge (`ai_serve_charge` ± `ai_serve_charge_spread`), saut sous le ballon et frappe. Elle lit son propre lancer, sans téléportation.
+
+**Prévisualisation** (serveur humain, avancée en étape B) : points blancs = arc du lancer, qui grandit avec la charge ; barre jaune = charge ;
+cercle = zone de frappe ; trajectoire après la frappe, atterrissage ± 1 écart-type. **Prévision de la balle** (tout joueur, permanente) : trajectoire
+pâle, anneau d'atterrissage (vert dans les lignes, orange dehors, croix rouge au filet).
+
+**Reste à faire** : étape B (prévisualisation enrichie, animations du serveur), étape C (impacts, traînée, vitesse, caméra). Le saut de service garde l'animation provisoire.
 
 ## Contre [Prévu J3]
 
