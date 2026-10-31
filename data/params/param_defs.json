@@ -1369,7 +1369,7 @@
   {
    "id": "serve_toss_speed",
    "group": "contact",
-   "label": "Service : vitesse du lancer",
+   "label": "Service : vitesse du lancer (charge minimale)",
    "unit": "m/s",
    "default": 6.2,
    "min": 3.0,
@@ -1379,7 +1379,37 @@
    "apply": "immediate",
    "integer": false,
    "step": 0.1,
-   "description": "Vitesse verticale donnée au ballon quand le serveur le lance."
+   "description": "Vitesse verticale du ballon quand L est relâché tout de suite. La charge l'augmente jusqu'à `serve_toss_speed_max`."
+  },
+  {
+   "id": "serve_toss_speed_max",
+   "group": "contact",
+   "label": "Service : vitesse du lancer (charge maximale)",
+   "unit": "m/s",
+   "default": 8.5,
+   "min": 3.0,
+   "max": 14.0,
+   "experimental_min": 0.0,
+   "experimental_max": 18.0,
+   "apply": "immediate",
+   "integer": false,
+   "step": 0.1,
+   "description": "Vitesse verticale du ballon quand L est maintenu au maximum : lancer plus haut, donc plus long à attendre."
+  },
+  {
+   "id": "serve_charge_time",
+   "group": "contact",
+   "label": "Service : durée de la charge",
+   "unit": "s",
+   "default": 1.0,
+   "min": 0.2,
+   "max": 3.0,
+   "experimental_min": 0.1,
+   "experimental_max": 5.0,
+   "apply": "immediate",
+   "integer": false,
+   "step": 0.05,
+   "description": "Temps de maintien de L pour atteindre la charge maximale."
   },
   {
    "id": "net_zone",
@@ -2117,19 +2147,19 @@
    "description": "La visée assistée (et l'IA) relève l'angle pour passer au moins à cette hauteur au-dessus du bord du filet."
   },
   {
-   "id": "serve_toss_drift",
+   "id": "serve_toss_forward",
    "group": "contact",
-   "label": "Service : dérive du lancer",
+   "label": "Service : avance du lancer",
    "unit": "m/s",
-   "default": 1.6,
+   "default": 0.6,
    "min": 0.0,
-   "max": 4.0,
+   "max": 3.0,
    "experimental_min": 0.0,
-   "experimental_max": 6.0,
+   "experimental_max": 5.0,
    "apply": "immediate",
    "integer": false,
    "step": 0.05,
-   "description": "Vitesse horizontale donnée au ballon au lancer quand la direction est tenue à fond : vers l'avant (le filet) ou vers l'arrière."
+   "description": "Vitesse horizontale de base du lancer, vers le filet : la courbe de base. Aucune direction à tenir."
   },
   {
    "id": "serve_toss_move_factor",
@@ -2147,11 +2177,11 @@
    "description": "Part de la vitesse de course permise au serveur pendant que le ballon monte, pour se replacer sous lui (derrière la ligne de fond)."
   },
   {
-   "id": "ai_serve_toss_spread",
+   "id": "ai_serve_charge",
    "group": "ai",
-   "label": "IA : variation du lancer",
+   "label": "IA : charge du lancer",
    "unit": "",
-   "default": 0.25,
+   "default": 0.75,
    "min": 0.0,
    "max": 1.0,
    "experimental_min": 0.0,
@@ -2159,7 +2189,22 @@
    "apply": "immediate",
    "integer": false,
    "step": 0.01,
-   "description": "Écart-type de la direction de lancer de l'IA (tirage à chaque service, flux ai)."
+   "description": "Part de la charge maximale que l'IA garde avant de relâcher son lancer (0 = lancer le plus bas, 1 = le plus haut)."
+  },
+  {
+   "id": "ai_serve_charge_spread",
+   "group": "ai",
+   "label": "IA : variation de la charge",
+   "unit": "",
+   "default": 0.12,
+   "min": 0.0,
+   "max": 0.5,
+   "experimental_min": 0.0,
+   "experimental_max": 0.5,
+   "apply": "immediate",
+   "integer": false,
+   "step": 0.01,
+   "description": "Écart-type de la charge de l'IA (tirage à chaque service, flux ai)."
   },
   {
    "id": "ai_serve_aim_spread",

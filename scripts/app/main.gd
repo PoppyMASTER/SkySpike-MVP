@@ -125,25 +125,35 @@ func _handle_serve_capture_args() -> void:
 	runner.set_paused(true)
 	await get_tree().process_frame
 	var server := runner.sim.ctx.rally.server_slot
-	var step := func(axis: float, press := false) -> void:
+	var helper := AiDirector.new(runner.data.params, 2, runner.clock.dt, -1)   # joue le serveur après le lancer
+	helper.set_lineup(MatchConfig.default_lineup(runner.data.characters))
+	var step := func(intent: PlayerIntent) -> void:
 		var intents := runner.ai.intents(runner.current_state)
-		intents[server] = PlayerIntent.make(axis, false, false, false, false, press)
+		intents[server] = intent
 		runner.run_one_tick(intents)
 	while runner.sim.actors[server].state != Enums.ActionState.SERVE_HOLD:
-		step.call(0.0)
-	var facing := runner.sim.actors[server].facing
-	step.call(float(facing))
-	await _shot(runner, dir.path_join("serve_01_tenue_avant.png"))
-	step.call(-float(facing))
-	await _shot(runner, dir.path_join("serve_02_tenue_arriere.png"))
-	step.call(0.0, true)
-	for t in 107:
-		step.call(0.0)
-	var names := ["serve_03_frappe_longue", "serve_04_frappe_neutre", "serve_05_frappe_courte"]
-	var axes := [float(facing), 0.0, -float(facing)]
-	for k in 3:
-		step.call(axes[k])
-		await _shot(runner, dir.path_join(names[k] + ".png"))
+		step.call(PlayerIntent.make())
+	step.call(PlayerIntent.make(0.0, false, false, false, false, true, true))
+	for t in 30:
+		step.call(PlayerIntent.make(0.0, false, false, false, false, false, true))
+	await _shot(runner, dir.path_join("serve_01_charge_courte.png"))
+	for t in 80:
+		step.call(PlayerIntent.make(0.0, false, false, false, false, false, true))
+	await _shot(runner, dir.path_join("serve_02_charge_pleine.png"))
+	step.call(PlayerIntent.make())   # relâché : le ballon part
+	var shots := {40: "serve_03_ballon_monte", 120: "serve_04_ballon_descend"}
+	var guard := 0
+	while runner.sim.actors[server].state != Enums.ActionState.SERVE_HIT and guard < 1200:
+		guard += 1
+		step.call(helper.intents(runner.current_state)[server])
+		if shots.has(guard):
+			await _shot(runner, dir.path_join(shots[guard] + ".png"))
+		if runner.sim.actors[server].state == Enums.ActionState.SERVE_JUMP and not shots.has(-1):
+			shots[-1] = ""
+			await _shot(runner, dir.path_join("serve_05_en_l_air.png"))
+	for t in 25:
+		step.call(helper.intents(runner.current_state)[server])
+	await _shot(runner, dir.path_join("serve_06_apres_la_frappe.png"))
 	get_tree().quit()
 
 

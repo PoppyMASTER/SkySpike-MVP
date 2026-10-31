@@ -18,7 +18,7 @@ var _timing_error: Array[float] = []
 var _feint: Array[bool] = []
 var _block: Array[bool] = []
 var _stats_apex: Array[float] = []
-var _serve_aim: Dictionary = {}   # slot -> direction tenue à la frappe du service (tirée au lancer)
+var _serve: AiServe
 
 
 func _init(param_store: ParamStore, seed_value: int, tick_dt: float, human := -1) -> void:
@@ -26,6 +26,7 @@ func _init(param_store: ParamStore, seed_value: int, tick_dt: float, human := -1
 	dt = tick_dt
 	human_slot = human
 	_rng = MatchRng.new(seed_value)
+	_serve = AiServe.new(params, _rng, dt)
 
 
 ## Une intention par slot (celle du slot humain est neutre : le clavier la remplace).
@@ -59,20 +60,10 @@ func _resample(now: MatchState) -> void:
 
 func _decide(slot: int, now: MatchState, seen: MatchState) -> PlayerIntent:
 	var me := now.players[slot]
-	if now.phase == Enums.Phase.SERVE_PREP:
-		var wait: float = params.get_value(ParamIds.AI_SERVE_DELAY)
-		if slot == now.server_slot and me.action == Enums.ActionState.SERVE_HOLD and now.phase_time >= wait:
-			# comme un humain : la direction tenue au lancer donne la dérive du ballon (tirage unique par service)
-			var toss := clampf(_rng.gaussian_tagged(MatchRng.STREAM_AI, "serve_toss_%d" % slot, params.get_value(ParamIds.AI_SERVE_TOSS_SPREAD)), -1.0, 1.0)
-			_serve_aim[slot] = clampf(_rng.gaussian_tagged(MatchRng.STREAM_AI, "serve_aim_%d" % slot, params.get_value(ParamIds.AI_SERVE_AIM_SPREAD)), -1.0, 1.0)
-			return PlayerIntent.make(toss, false, false, false, false, true)
-		return PlayerIntent.make()
+	if (now.phase == Enums.Phase.SERVE_PREP or now.phase == Enums.Phase.BALL_LIVE) and _serve.handles(slot, now):
+		return _serve.decide(slot, now, _apex_for(slot), _timing_error[slot] if slot < _timing_error.size() else 0.0)
 	if now.phase != Enums.Phase.BALL_LIVE:
 		return PlayerIntent.make()
-	if me.action == Enums.ActionState.SERVE_HIT:   # la direction tenue pendant la frappe = profondeur visée
-		return PlayerIntent.make(_serve_aim.get(slot, 0.0))
-	if me.action == Enums.ActionState.SERVE_TOSS:
-		return _ground_action(slot, ContactSpec.SERVE, now, now, false, true)   # son propre lancer : ni délai ni erreur de perception
 	var plan := _plan(me.team, now, seen)
 	if plan.slot == slot:
 		match plan.action:

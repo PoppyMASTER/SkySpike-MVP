@@ -33,6 +33,8 @@ var fault_text := ""
 var human_slot := -1
 ## Prévision du service du joueur humain (null si ce n'est pas à lui de servir). Hors empreinte.
 var serve_preview: ServePreview
+## Trajectoire prévue du ballon s'il n'est plus touché (null si tenu ou posé). Hors empreinte.
+var ball_prediction: BallPrediction
 
 
 ## Texte stable et exact (flottants en hexadécimal) pour comparer deux exécutions.

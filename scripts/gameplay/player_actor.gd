@@ -7,6 +7,8 @@ extends RefCounted
 const WINDOW_STATES := [Enums.ActionState.RECEIVE, Enums.ActionState.SET, Enums.ActionState.SPIKE,
 	Enums.ActionState.FEINT, Enums.ActionState.SERVE_HIT]
 
+const SERVE_STATES := [Enums.ActionState.SERVE_HOLD, Enums.ActionState.SERVE_TOSS, Enums.ActionState.SERVE_JUMP, Enums.ActionState.SERVE_HIT]
+
 var slot := 0
 var team := 0
 var character: CharacterDefinition
@@ -25,6 +27,7 @@ var _auto_x := 0.0
 var _serving := false
 var _axis := 0.0
 var _best_distance := INF
+var _toss := ServeCharge.new()
 
 
 func _init(player_slot: int, team_index: int, definition: CharacterDefinition, start_x: float, look_dir: int) -> void:
@@ -61,6 +64,7 @@ func reset_to(x: float) -> void:
 func begin_serve() -> void:
 	_locked = false
 	_serving = true
+	_toss.reset()
 	_enter(Enums.ActionState.SERVE_HOLD)
 
 
@@ -139,7 +143,7 @@ func snapshot(p: ParamStore) -> PlayerSnapshot:
 
 # ------------------------------------------------------------------ entrées et transitions
 func _handle_input(intent: PlayerIntent, ctx: SimContext) -> void:
-	var press := intent.first_press()
+	var press := intent.first_press(state in SERVE_STATES)
 	match state:
 		Enums.ActionState.FREE:
 			if press == &"jump":
@@ -166,22 +170,34 @@ func _handle_input(intent: PlayerIntent, ctx: SimContext) -> void:
 			elif press == &"receive":
 				_begin_window(ctx, ContactSpec.FEINT, Enums.ActionState.FEINT)
 		Enums.ActionState.SERVE_HOLD:
-			if intent.serve_pressed:
-				ctx.ball_held = false
-				ctx.ball.position = serve_hold_position(ctx.params)
-				# lancer contrôlé : la direction tenue (axe monde) donne la dérive horizontale du ballon
-				ctx.ball.velocity = Vector2(intent.move_axis * ctx.params.get_value(ParamIds.SERVE_TOSS_DRIFT),
-					ctx.params.get_value(ParamIds.SERVE_TOSS_SPEED))
-				ctx.emit(MatchEvent.Type.SERVE_TOSSED, {"slot": slot})
-				_enter(Enums.ActionState.SERVE_TOSS)
+			_charge_toss(intent, ctx)
 		Enums.ActionState.SERVE_TOSS:
-			if intent.serve_pressed:
-				_begin_window(ctx, ContactSpec.SERVE, Enums.ActionState.SERVE_HIT)
-			elif intent.jump_pressed:
+			if intent.jump_pressed:   # le service se frappe en l'air : il faut sauter
 				_do_jump(ctx, Enums.ActionState.SERVE_JUMP)
 		Enums.ActionState.SERVE_JUMP:
 			if intent.serve_pressed:
 				_begin_window(ctx, ContactSpec.SERVE, Enums.ActionState.SERVE_HIT)
+
+
+## Tenue du ballon : L maintenu charge le lancer, relâcher le lance (plus la charge est longue, plus il monte).
+func _charge_toss(intent: PlayerIntent, ctx: SimContext) -> void:
+	if not _toss.update(intent, ctx.dt, ctx.params):
+		return
+	ctx.ball_held = false
+	ctx.ball.position = serve_hold_position(ctx.params)
+	ctx.ball.velocity = _toss.toss_velocity(ctx.params, facing)
+	ctx.emit(MatchEvent.Type.SERVE_TOSSED, {"slot": slot, "charge": snappedf(_toss.fraction(ctx.params), 0.001)})
+	_toss.reset()
+	_enter(Enums.ActionState.SERVE_TOSS)
+
+
+## Charge (0 à 1) et vitesse de lancer actuelles : lues par la prévision du service.
+func serve_charge(p: ParamStore) -> float:
+	return _toss.fraction(p)
+
+
+func toss_velocity(p: ParamStore) -> Vector2:
+	return _toss.toss_velocity(p, facing)
 
 
 func _do_jump(ctx: SimContext, new_state: int) -> void:

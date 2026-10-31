@@ -7,15 +7,15 @@ extends RefCounted
 ## | move_left/right     | ← → ou Q, A, D | stick gauche   |
 ## | jump_attack         | Espace        | A              |
 ## | receive_block_feint | J             | X              |
-## | set_action          | K             | B              |
-## | serve_action        | L             | Y              |
+## | set_action          | L (ou K)      | B ou Y         |
+##
+## L sert à deux choses : la passe en jeu, le service pendant la tenue du ballon (maintenir = charger le lancer).
 
 const MOVE_LEFT := &"move_left"
 const MOVE_RIGHT := &"move_right"
 const JUMP_ATTACK := &"jump_attack"
 const RECEIVE_BLOCK_FEINT := &"receive_block_feint"
 const SET_ACTION := &"set_action"
-const SERVE_ACTION := &"serve_action"
 const STICK_DEADZONE := 0.25
 
 
@@ -25,8 +25,7 @@ static func register_actions() -> void:
 	_add(MOVE_RIGHT, [_key(KEY_RIGHT), _key(KEY_D), _axis(JOY_AXIS_LEFT_X, 1.0)])
 	_add(JUMP_ATTACK, [_key(KEY_SPACE), _button(JOY_BUTTON_A)])
 	_add(RECEIVE_BLOCK_FEINT, [_key(KEY_J), _button(JOY_BUTTON_X)])
-	_add(SET_ACTION, [_key(KEY_K), _button(JOY_BUTTON_B)])
-	_add(SERVE_ACTION, [_key(KEY_L), _button(JOY_BUTTON_Y)])
+	_add(SET_ACTION, [_key(KEY_L), _key(KEY_K), _button(JOY_BUTTON_B), _button(JOY_BUTTON_Y)])
 
 
 ## Lit les touches et alimente le tampon de l'image courante.
@@ -34,7 +33,7 @@ static func poll(latch: InputLatch) -> void:
 	latch.sample(Input.get_axis(MOVE_LEFT, MOVE_RIGHT),
 		Input.is_action_just_pressed(JUMP_ATTACK), Input.is_action_just_pressed(RECEIVE_BLOCK_FEINT),
 		Input.is_action_pressed(RECEIVE_BLOCK_FEINT), Input.is_action_just_pressed(SET_ACTION),
-		Input.is_action_just_pressed(SERVE_ACTION))
+		Input.is_action_just_pressed(SET_ACTION), Input.is_action_pressed(SET_ACTION))
 
 
 static func _add(action: StringName, events: Array[InputEvent]) -> void:

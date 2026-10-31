@@ -60,21 +60,24 @@ Qualité `q = clamp(1 − w_t·e_t² − w_s·e_s², 0, 1)` avec `e_t` = erreur 
 centre / rayon. Trop tôt = trajectoire plus haute et plus courte, trop tard = plus basse. Le mode assisté
 multiplie les tolérances et corrige la direction dans une limite d'angle réglable.
 
-## Service [Implémenté au J4.1a]
+## Service [Implémenté au J4.1a, révisé]
 
-1. **Tenue** : le serveur tient le ballon derrière la ligne de fond (`SERVE_HOLD`). La prévision montre l'arc du lancer selon la direction tenue.
-2. **Lancer** (touche de service) : la direction tenue à cet instant donne la dérive horizontale du ballon
-   (`serve_toss_drift` × axe, dans le sens du monde). Le ballon monte à `serve_toss_speed`.
-3. **Pendant le lancer** : le serveur peut se replacer sous le ballon (`serve_toss_move_factor` de sa vitesse de course),
-   sans jamais franchir la ligne de fond. Saut optionnel (touche de saut).
-4. **Frappe** (touche de service) : fenêtre de contact comme les autres coups. En visée assistée, la direction tenue
-   pendant la frappe règle la profondeur visée entre `assist_ratio_min` et `assist_ratio_max` du camp adverse, par la
-   vitesse de la balle (trajectoire au-dessus du filet avec `assist_net_clearance`). La qualité (timing, placement)
-   plafonne la vitesse : un service mal frappé retombe court ou dans le filet. En visée manuelle : angle seul (`aim_range`).
-5. **Prévisualisation** (serveur humain seulement) : points blancs = arc du lancer ; cercle jaune = zone de frappe ;
-   points verts/rouges = trajectoire après la frappe ; barre au sol = atterrissage ± 1 écart-type d'angle ; texte = qualité,
-   « FILET » ou « HORS TERRAIN ». Hypothèse : « si tu frappes maintenant » (en tenue : au meilleur moment). Elle ne
-   prévoit pas le déplacement du serveur après l'appui.
+L sert de touche de passe en jeu et de touche de service pendant la tenue du ballon.
+1. **Tenue** (`SERVE_HOLD`) : appuyer sur L puis le **maintenir** charge le lancer pendant `serve_charge_time`. La prévision montre l'arc
+   du lancer, qui grandit avec la charge, et le meilleur saut possible.
+2. **Lancer** : relâcher L lance le ballon. Hauteur = `serve_toss_speed` (charge nulle) à `serve_toss_speed_max` (charge pleine) ;
+   avance de base vers le filet `serve_toss_forward`. **Aucune direction à tenir.**
+3. **Saut obligatoire** (Espace) : le service ne se frappe pas au sol. Le serveur peut se replacer sous le ballon
+   (`serve_toss_move_factor` de sa vitesse), sans passer la ligne de fond.
+4. **Frappe en l'air** : L, fenêtre de contact comme les autres coups. En visée assistée, la direction tenue pendant la frappe règle la profondeur
+   (de `assist_ratio_min` à `assist_ratio_max` du camp adverse) par la vitesse de la balle, sur une trajectoire au-dessus du filet
+   (`assist_net_clearance`). La qualité (timing, placement) plafonne la vitesse. En visée manuelle : angle seul (`aim_range`).
+5. **Prévisualisation** (serveur humain) : points blancs = arc du lancer ; barre jaune = charge ; cercle = zone de frappe ; points verts ou rouges =
+   trajectoire après la frappe ; barre au sol = atterrissage ± 1 écart-type ; texte = qualité, « FILET » ou « HORS TERRAIN ».
+   Avant le saut elle suppose le meilleur saut possible ; en l'air : « si tu frappes maintenant ».
+6. **Prévision de la balle, en permanence** (tout joueur) : trajectoire pâle jusqu'au sol, anneau d'atterrissage (vert dans les lignes,
+   orange dehors, croix rouge si le ballon s'arrête dans le filet).
+7. Animation du saut de service : provisoire (saut standard). La référence de Djebril viendra la remplacer.
 
 ## Contre [Prévu J3]
 
@@ -86,7 +89,7 @@ seuils bloc partiel, en dessous le ballon passe. Chaque terme est publié dans l
 - **Match** : six joueurs (slots 0-2 bleus à gauche, 3-5 rouges à droite), un set de 15 points, 2 d'écart. Phases READY → SERVE_PREP → BALL_LIVE → POINT_AWARDED → RESET.
 - **Postes** : attaquant, passeur, défenseur ; positions de départ `home_*_x`. Le service tourne attaquant → passeur → défenseur à chaque changement de service.
 - **Arbitre** : 3 touches maximum par équipe, double touche = faute, 4e touche = faute, touche de bloc non comptée (et le contreur peut rejouer), ballon au sol hors terrain = faute de la dernière équipe qui l'a touché, service qui retombe sans avoir été frappé = faute de service.
-- **Touches** : flèches / Q D déplacement, Espace saut puis smash, J réception (sol) ou contre (au filet) ou feinte (en l'air), K passe, L service ; manette : stick, A, X, B, Y.
+- **Touches** : flèches / Q D déplacement, Espace saut puis smash, J réception (sol) ou contre (au filet) ou feinte (en l'air), L passe ou service (K en alias), maintenir L au service = charger le lancer ; manette : stick, A, X, B ou Y.
 - **Visée** : assistée (défaut) ou manuelle (`aim_mode`, panneau F1). En assisté, l'angle est corrigé vers une cible, plafonné.
 - **Contre** : attaque = vitesse et qualité du smash ; défense = stat × (timing, alignement, marge) ; issue = bloc écrasé, touche ou passage.
 - **IA** : délai de réaction, erreurs de prédiction et de timing, plan selon le nombre de touches (réception, passe, attaque), tentative de contre, retour à la formation.

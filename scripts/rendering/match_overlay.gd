@@ -22,6 +22,8 @@ func _draw() -> void:
 	var k := view.pixels_per_meter()
 	for i in state.players.size():
 		_draw_player_marks(i, state.players[i], k)
+	if state.ball_prediction != null:
+		_draw_ball_prediction(state.ball_prediction)
 	if state.serve_preview != null:
 		_draw_serve_preview(state.serve_preview, k)
 	_draw_ball(k)
@@ -77,10 +79,29 @@ func _draw_preview_info() -> void:
 	draw_multiline_string(view.font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, -1, Color(0.75, 1.0, 0.85))
 
 
+## Trajectoire prévue du ballon, en transparence, tout le temps : points pâles et anneau là où il retombe
+## (vert = dans les lignes, orange = dehors, rouge = s'arrête dans le filet).
+func _draw_ball_prediction(pred: BallPrediction) -> void:
+	_draw_dotted(pred.path, Color(1, 1, 1, 0.22), 2.0)
+	var color := COLOR_PREVIEW_OK if pred.lands_inside else COLOR_PREVIEW_BAD
+	var end := view.to_screen(pred.path[pred.path.size() - 1])
+	if pred.hits_net:
+		draw_line(end + Vector2(-7, -7), end + Vector2(7, 7), Color(color, 0.8), 3.0)
+		draw_line(end + Vector2(-7, 7), end + Vector2(7, -7), Color(color, 0.8), 3.0)
+		return
+	var ground := view.to_screen(Vector2(pred.landing_x, 0.0))
+	draw_arc(ground, 11.0, 0.0, TAU, 24, Color(color, 0.7), 3.0, true)
+	draw_circle(ground, 4.0, Color(color, 0.45))
+
+
 ## Prévision du service : arc du lancer (points blancs), zone et point de frappe, trajectoire
 ## après la frappe (verte si elle passe le filet, rouge sinon) et zone d'atterrissage (± 1 écart-type).
 func _draw_serve_preview(pv: ServePreview, k: float) -> void:
 	_draw_dotted(pv.toss_path, Color(1, 1, 1, 0.55), 2.5)
+	if pv.charge > 0.0 and pv.toss_path.size() > 0:
+		var base := view.to_screen(pv.toss_path[0]) + Vector2(-26.0, 22.0)
+		draw_rect(Rect2(base, Vector2(52.0, 6.0)), Color(1, 1, 1, 0.2))
+		draw_rect(Rect2(base, Vector2(52.0 * pv.charge, 6.0)), COLOR_HUMAN)
 	if not pv.can_hit:
 		var hint := view.to_screen(pv.toss_path[pv.toss_path.size() / 2]) if pv.toss_path.size() > 0 else Vector2.ZERO
 		draw_string(view.font, hint + Vector2(14, 0), "hors de portée", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 0.55, 0.5))
@@ -96,6 +117,8 @@ func _draw_serve_preview(pv: ServePreview, k: float) -> void:
 	draw_line(ground, ground_end, Color(color, 0.85), 5.0)
 	draw_circle(view.to_screen(Vector2(pv.landing_x, 0.0)), 6.0, color)
 	var text := "qualité %d %%" % roundi(pv.quality * 100.0)
+	if pv.planned:
+		text = "meilleur saut : " + text
 	if not pv.clears_net:
 		text += " · FILET"
 	elif not pv.lands_in:
