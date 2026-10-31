@@ -17,6 +17,7 @@ func _ready() -> void:
 	_handle_anim_sheet_args(data)
 	_handle_capture_args()
 	_handle_serve_capture_args()
+	_handle_service_capture_args()
 
 
 ## `-- --sim N` : N matchs IA contre IA sans affichage (graines 1..N), résumé en console, puis quitte.
@@ -154,6 +155,43 @@ func _handle_serve_capture_args() -> void:
 	for t in 25:
 		step.call(helper.intents(runner.current_state)[server])
 	await _shot(runner, dir.path_join("serve_06_apres_la_frappe.png"))
+	get_tree().quit()
+
+
+## `-- --capture-service DOSSIER [--video]` : vignettes des animations de service (voir ServiceCapture), puis quitte.
+## Avec `--video` : une image par tick pour la démonstration animée (assemblée par tools/service_sheets.py).
+func _handle_service_capture_args() -> void:
+	var args := OS.get_cmdline_user_args()
+	var i := args.find("--capture-service")
+	if i < 0 or i + 1 >= args.size():
+		return
+	var dir := args[i + 1]
+	DirAccess.make_dir_recursive_absolute(dir)
+	var runner: MatchRunner = get_child(get_child_count() - 1)
+	await get_tree().process_frame
+	for kind: String in ServiceCapture.SCRIPTS:
+		var script: Array = ServiceCapture.SCRIPTS[kind]
+		var marks := ServiceCapture.scan(runner, script)
+		print("repères %s : %s" % [kind, marks])
+		var plan := ServiceCapture.frame_plan(kind, marks)
+		await ServiceCapture.shoot(self, runner, script, plan, dir, kind + "_normal", false)
+		await ServiceCapture.shoot(self, runner, script, plan, dir, kind + "_debug", true)
+		if kind == "smash":   # démonstration des transitions : 6 images par frontière, un tick sur deux
+			var transitions: Array = []
+			var boundaries := {"lancer → saut": marks.jump, "saut → frappe": marks.open, "frappe → suivi": marks.end, "suivi → atterrissage": marks.get("land", marks.end + 30)}
+			var n := 0
+			for name: String in boundaries:
+				for d in 6:
+					transitions.append(["%02d %s %+d ticks" % [n + 1, name, (d - 2) * 2], int(boundaries[name]) + (d - 2) * 2])
+					n += 1
+			await ServiceCapture.shoot(self, runner, script, transitions, dir, "transitions_smash_normal", false)
+			await ServiceCapture.shoot(self, runner, script, transitions, dir, "transitions_smash_debug", true)
+		if args.has("--video"):   # une image par tick (120/s) pour la démonstration animée (normal et ralenti)
+			var every: Array = []
+			for tick in range(int(marks.hold) - 10, int(marks.get("land", marks.end + 30)) + 50):
+				every.append(["%04d" % tick, tick])
+			await ServiceCapture.shoot(self, runner, script, every, dir, "video_%s_normal" % kind, false)
+			await ServiceCapture.shoot(self, runner, script, every, dir, "video_%s_debug" % kind, true)
 	get_tree().quit()
 
 

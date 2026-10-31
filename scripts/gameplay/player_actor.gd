@@ -30,6 +30,7 @@ var _serving := false
 var _axis := 0.0
 var _best_distance := INF
 var _toss := ServeCharge.new()
+var strike := StrikeRecord.new()
 
 
 func _init(player_slot: int, team_index: int, definition: CharacterDefinition, start_x: float, look_dir: int) -> void:
@@ -45,6 +46,7 @@ func _init(player_slot: int, team_index: int, definition: CharacterDefinition, s
 func lock_to(x: float) -> void:
 	_locked = true
 	_serving = false
+	strike.reset()
 	_auto_x = x
 	if state in [Enums.ActionState.SERVE_HOLD, Enums.ActionState.SERVE_TOSS, Enums.ActionState.SERVE_HIT]:
 		_enter(Enums.ActionState.FREE)   # service raté : le serveur ne doit pas rester figé dans son geste
@@ -66,6 +68,7 @@ func reset_to(x: float) -> void:
 func begin_serve() -> void:
 	_locked = false
 	_serving = true
+	strike.reset()
 	_toss.reset()
 	_enter(Enums.ActionState.SERVE_HOLD)
 
@@ -86,6 +89,7 @@ func tick(intent: PlayerIntent, ctx: SimContext, ball_from: Vector2) -> void:
 	var p := ctx.params
 	state_time += ctx.dt
 	since_toss += ctx.dt
+	strike.tick(ctx.dt)
 	if _locked:
 		intent = PlayerIntent.make()
 	_axis = intent.move_axis
@@ -123,6 +127,13 @@ func snapshot(p: ParamStore) -> PlayerSnapshot:
 	s.action_time = state_time
 	if state == Enums.ActionState.SERVE_HOLD:
 		s.serve_charge = _toss.fraction(p)
+	s.serve_intent = String(strike.intent)
+	s.strike_age = strike.age
+	s.strike_kind = String(strike.kind)
+	s.strike_missed = strike.missed
+	s.strike_window_time = strike.window_time
+	s.strike_ideal = strike.ideal
+	s.serve_expected = strike.expected
 	var receive := ContactSpec.of(ContactSpec.RECEIVE, p)
 	var spike := ContactSpec.of(ContactSpec.SPIKE, p)
 	s.receive_center = receive.center(body.position, facing)
@@ -226,6 +237,10 @@ func _do_jump(ctx: SimContext, new_state: int) -> void:
 func _begin_window(ctx: SimContext, kind: StringName, new_state: int) -> void:
 	_kind = kind
 	_best_distance = INF
+	if kind == ContactSpec.SERVE:
+		var plan := ServePrediction.compute(self, ctx)
+		strike.intent = plan.kind
+		strike.expected = plan.contact_at
 	_enter(new_state)
 	ctx.emit(MatchEvent.Type.ACTION_STARTED, {"slot": slot, "action": String(kind)})
 
@@ -289,6 +304,10 @@ func _move(intent: PlayerIntent, ctx: SimContext) -> bool:
 ## zone donne une mauvaise qualité, un ballon qui passe au centre une bonne).
 func _update_window(ctx: SimContext, ball_from: Vector2) -> void:
 	var spec := ContactSpec.of(_kind, ctx.params)
+	if _kind == ContactSpec.SERVE and state == Enums.ActionState.SERVE_HIT and _best_distance == INF:
+		var plan := ServePrediction.compute(self, ctx, state_time)   # l'intention se précise tant que le ballon n'est pas touché
+		strike.intent = plan.kind
+		strike.expected = plan.contact_at
 	if state_time > spec.t_off:
 		if _best_distance < INF:
 			_commit(ctx, spec, _best_distance)   # la fenêtre se ferme avec le ballon dans la zone
@@ -309,6 +328,9 @@ func _update_window(ctx: SimContext, ball_from: Vector2) -> void:
 
 func _commit(ctx: SimContext, spec: ContactSpec, distance: float) -> void:
 	var details := ContactResolver.resolve(spec, self, ctx, state_time, distance, _axis * facing)
+	if _kind == ContactSpec.SERVE:
+		details["serve_intent"] = String(strike.intent)
+		strike.real = StringName(details.serve_kind)
 	ctx.emit(MatchEvent.Type.CONTACT, details)
 	ctx.contacts.append({"slot": slot, "kind": String(_kind), "block": false})
 	_end_action(ctx, false)
@@ -320,6 +342,7 @@ func _end_action(ctx: SimContext, missed: bool) -> void:
 		ctx.emit(MatchEvent.Type.ACTION_MISSED, {"slot": slot, "action": String(_kind)})
 	if state == Enums.ActionState.SERVE_HIT:
 		_serving = false
+		strike.close(strike.real, state_time, strike.expected)
 	if body.grounded:
 		_enter(Enums.ActionState.RECOVER, ctx.params.get_value(ParamIds.RECOVER_S))
 	else:

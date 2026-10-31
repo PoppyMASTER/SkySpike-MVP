@@ -13,6 +13,12 @@
   "block": "block_v1",
   "feint": "feint_v1",
   "serve_prep": "serve_prep_v1",
-  "serve_toss": "serve_toss_v1"
+  "serve_toss": "serve_toss_v1",
+  "serve_ground": "serve_ground_v1",
+  "serve_float": "serve_float_v1",
+  "serve_smash": "serve_smash_v1",
+  "land_float": "land_float_v1",
+  "land_smash": "land_smash_v1",
+  "serve_jump": "serve_jump_v1"
  }
 }

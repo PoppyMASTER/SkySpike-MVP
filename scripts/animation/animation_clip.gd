@@ -25,6 +25,10 @@ var duration_s := 1.0
 var loop := false
 var time_domain := "seconds"
 var smooth := false
+## « spline » : courbe d'Hermite monotone à travers les poses (angles déroulés). Le mouvement garde sa vitesse en
+## traversant une pose clé quand il continue dans le même sens (accélération, impact) et ne s'arrête que là où il
+## change de sens (armé, fin du suivi) ; jamais de dépassement entre deux poses (limites articulaires tenues).
+var spline := false
 ## Cycle de course : longueur parcourue pour un tour de clip (m).
 var stride_m := 1.9
 ## Vitesse verticale (m/s) correspondant au début / à la fin du clip (domaine air_velocity).
@@ -59,6 +63,8 @@ func sample(t: float) -> Dictionary:
 	var i := 0
 	while i < last - 1 and t >= times[i + 1]:
 		i += 1
+	if spline:
+		return _hermite(i, t)
 	return _blend(poses[i], poses[i + 1], (t - times[i]) / (times[i + 1] - times[i]))
 
 
@@ -68,6 +74,41 @@ func marker(name: String, fallback: float) -> float:
 
 func has_marker(name: String) -> bool:
 	return markers.has(name)
+
+
+## Segment [i, i+1] en Hermite monotone (Fritsch-Butland) : tangente nulle aux extrémités du clip et là où le
+## mouvement change de sens, moyenne harmonique pondérée des pentes sinon.
+func _hermite(i: int, t: float) -> Dictionary:
+	var t0 := times[i]
+	var t1 := times[i + 1]
+	var h := t1 - t0
+	var u := (t - t0) / h
+	var out := {}
+	var bones := {}
+	for k in range(maxi(i - 1, 0), mini(i + 3, poses.size())):
+		for bone: String in poses[k]:
+			bones[bone] = true
+	for bone: String in bones:
+		var p0 := float(poses[i].get(bone, 0.0))
+		var p1 := p0 + angle_difference(p0, float(poses[i + 1].get(bone, 0.0)))
+		var m0 := 0.0
+		var m1 := 0.0
+		if i > 0:
+			var pm := p0 - angle_difference(float(poses[i - 1].get(bone, 0.0)), float(poses[i].get(bone, 0.0)))
+			m0 = _tangent((p0 - pm) / (t0 - times[i - 1]), (p1 - p0) / h, t0 - times[i - 1], h)
+		if i + 2 < poses.size():
+			var p2 := p1 + angle_difference(float(poses[i + 1].get(bone, 0.0)), float(poses[i + 2].get(bone, 0.0)))
+			m1 = _tangent((p1 - p0) / h, (p2 - p1) / (times[i + 2] - t1), h, times[i + 2] - t1)
+		var u2 := u * u
+		var u3 := u2 * u
+		out[bone] = (2.0 * u3 - 3.0 * u2 + 1.0) * p0 + (u3 - 2.0 * u2 + u) * h * m0 + (-2.0 * u3 + 3.0 * u2) * p1 + (u3 - u2) * h * m1
+	return out
+
+
+static func _tangent(left: float, right: float, h_left: float, h_right: float) -> float:
+	if left * right <= 0.0:
+		return 0.0
+	return 3.0 * (h_left + h_right) / ((2.0 * h_right + h_left) / left + (h_right + 2.0 * h_left) / right)
 
 
 func _blend(a: Dictionary, b: Dictionary, u: float) -> Dictionary:
@@ -117,10 +158,11 @@ static func from_file(path: String, issues: Array[LoadIssue]) -> AnimationClip:
 	if mode != "absolute":
 		r.error("pose_mode", "« %s » non pris en charge en V1 : absolute utilisé" % mode)
 	var interp := r.optional_string("default_interpolation", "linear")
-	if interp != "linear" and interp != "smooth":
+	if interp != "linear" and interp != "smooth" and interp != "spline":
 		r.error("default_interpolation", "« %s » inconnu : linear utilisé" % interp)
 		interp = "linear"
 	c.smooth = interp == "smooth"
+	c.spline = interp == "spline"
 	c.grounded = r.read_bool("grounded", true)
 	c.air_legs = r.optional_string("air_legs", "")
 	c.move_legs = r.optional_string("move_legs", "")

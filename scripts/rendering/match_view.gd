@@ -171,6 +171,12 @@ func _update_rigs() -> void:
 	for i in mini(rigs.size(), current_state.players.size()):
 		var now := current_state.players[i]
 		var before: PlayerSnapshot = previous_state.players[i] if previous_state != null and i < previous_state.players.size() else null
+		if params != null:
+			var a := animators[i]
+			a.variants_enabled = params.get_value(ParamIds.ANIM_SERVE_VARIANTS) >= 0.5
+			a.intensity = params.get_value(ParamIds.ANIM_SERVE_INTENSITY)
+			a.follow_scale = params.get_value(ParamIds.ANIM_FOLLOW_THROUGH_SCALE)
+			a.blend_override = params.get_value(ParamIds.ANIM_SERVE_BLEND_S)
 		var frame := animators[i].evaluate(now, before, alpha, current_state.tick, current_state.tick_seconds, anim_speed)
 		frames[i] = frame
 		rigs[i].apply(frame)

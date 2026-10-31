@@ -42,6 +42,24 @@ func test_interpolation_between_keyframes_and_clamping() -> void:
 	assert_near(smooth.sample(0.25).torso, 0.15625, 1e-5, "lissage (smoothstep)")
 
 
+func test_spline_keeps_speed_through_keys_and_never_overshoots() -> void:
+	var keys := [{"t": 0.0, "pose": {"torso": 0.0}}, {"t": 0.5, "pose": {"torso": 1.0}}, {"t": 1.0, "pose": {"torso": 2.0}},
+		{"t": 1.5, "pose": {"torso": 1.5}}]
+	var clip := _load("spl", {"default_interpolation": "spline", "duration_s": 1.5, "keyframes": keys})
+	for k in 4:
+		assert_near(clip.sample(float(keys[k].t)).torso, float(keys[k].pose.torso), 1e-5, "passe par la pose %d" % k)
+	var speed: float = (clip.sample(0.51).torso - clip.sample(0.49).torso) / 0.02
+	assert_true(speed > 1.5, "même sens : la vitesse est conservée en traversant la pose (%.2f/s)" % speed)
+	var stop: float = absf(clip.sample(1.01).torso - clip.sample(0.99).torso) / 0.02
+	assert_true(stop < 0.1, "changement de sens : arrêt sur la pose (%.2f/s)" % stop)
+	for k in 31:
+		var v: float = clip.sample(1.5 * k / 30.0).torso
+		assert_true(v >= -1e-5 and v <= 2.0 + 1e-5, "jamais de dépassement (%.3f)" % v)
+	var wrap := _load("wrap", {"default_interpolation": "spline", "keyframes": [{"t": 0.0, "pose": {"torso": 2.8}},
+		{"t": 0.5, "pose": {"torso": -3.0}}, {"t": 1.0, "pose": {"torso": -2.6}}]})
+	assert_true(absf(wrap.sample(0.25).torso) > 2.8, "angles déroulés : passe par ±π, pas par 0 (%.3f)" % wrap.sample(0.25).torso)
+
+
 func test_loop_wraps_and_returns_to_the_first_pose() -> void:
 	var clip := _load("loop", {"loop": true, "default_interpolation": "linear",
 		"keyframes": [{"t": 0.0, "pose": {"torso": 0.0}}, {"t": 0.5, "pose": {"torso": 1.0}}]})

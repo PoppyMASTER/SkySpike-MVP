@@ -20,7 +20,7 @@ func _initialize() -> void:
 			if filter != "" and not file.contains(filter):
 				continue
 			var script: GDScript = load(file)
-			if script == null:
+			if script == null or not script.can_instantiate():   # erreur de compilation : jamais « 0 test » silencieux
 				print("ÉCHEC  %s : impossible de charger le script" % file)
 				failed += 1
 				continue

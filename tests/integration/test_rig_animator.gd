@@ -65,7 +65,7 @@ func test_every_simulation_state_maps_to_a_clip() -> void:
 		Enums.ActionState.SET: "set_v1", Enums.ActionState.BLOCK_READY: "block_v1", Enums.ActionState.AIR: "jump_v1",
 		Enums.ActionState.SPIKE: "spike_v1", Enums.ActionState.FEINT: "feint_v1", Enums.ActionState.BLOCK_AIR: "block_v1",
 		Enums.ActionState.RECOVER: "land_v1", Enums.ActionState.SERVE_HOLD: "serve_prep_v1", Enums.ActionState.SERVE_TOSS: "serve_toss_v1",
-		Enums.ActionState.SERVE_JUMP: "serve_toss_v1", Enums.ActionState.SERVE_HIT: "serve_v1",
+		Enums.ActionState.SERVE_JUMP: "serve_jump_v1", Enums.ActionState.SERVE_HIT: "serve_v1",
 	}
 	for state: int in expected:
 		var grounded: bool = not [Enums.ActionState.AIR, Enums.ActionState.SPIKE, Enums.ActionState.FEINT, Enums.ActionState.BLOCK_AIR, Enums.ActionState.SERVE_JUMP].has(state)
@@ -111,7 +111,11 @@ func test_holds_use_clip_markers() -> void:
 	var hold := _eval(a, _snap(Enums.ActionState.SERVE_HOLD))
 	assert_near(hold.clip_time, 0.0, 1e-6, "service tenu sans charge : début de la préparation")
 	var jumped := _eval(_animator(), _snap(Enums.ActionState.SERVE_JUMP, 0.2, 0.1, 0.2, false))
-	assert_near(jumped.clip_time, _lib.get_clip("serve_toss_v1").marker("cock", -1.0), 1e-6, "saut de service : bras armé (repère « cock »)")
+	assert_eq(jumped.clip_id, "serve_jump_v1", "saut de service : clip d'impulsion (le bras s'arme pendant le saut)")
+	var off := _animator()
+	off.variants_enabled = false
+	var legacy := _eval(off, _snap(Enums.ActionState.SERVE_JUMP, 0.2, 0.1, 0.2, false))
+	assert_near(legacy.clip_time, _lib.get_clip("serve_toss_v1").marker("cock", -1.0), 1e-6, "variantes coupées : bras armé figé (repère « cock »)")
 	var ready := _eval(_animator(), _snap(Enums.ActionState.BLOCK_READY, 0.3))
 	assert_near(ready.clip_time, 0.0, 1e-6, "contre prêt : pose d'attente figée")
 

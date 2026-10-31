@@ -6,13 +6,23 @@
  "loop": false,
  "time_domain": "seconds",
  "pose_mode": "absolute",
- "default_interpolation": "smooth",
+ "default_interpolation": "spline",
  "move_legs": "run",
  "air_legs": "jump",
  "blend_in_s": 0.05,
  "events": [
   {
    "t": 0.0,
+   "type": "visual_marker",
+   "name": "squash"
+  },
+  {
+   "t": 0.08,
+   "type": "visual_marker",
+   "name": "squash_end"
+  },
+  {
+   "t": 0.18,
    "type": "visual_marker",
    "name": "release"
   },
@@ -26,61 +36,61 @@
   {
    "t": 0.0,
    "pose": {
-    "thigh_l": -0.62,
-    "shin_l": 0.95,
-    "thigh_r": -0.55,
-    "shin_r": 0.88,
-    "upper_arm_l": -0.55,
-    "forearm_l": -0.75,
+    "torso": 0.22,
+    "neck": -0.068,
+    "head": -0.102,
+    "upper_arm_l": -1.12,
+    "forearm_l": -0.7,
     "hand_l": 0.0,
-    "upper_arm_r": 0.5,
-    "forearm_r": -0.5,
+    "upper_arm_r": 0.08,
+    "forearm_r": -0.9,
     "hand_r": 0.0,
-    "torso": 0.32,
-    "neck": -0.12,
-    "head": -0.2,
-    "foot_l": -0.3,
-    "foot_r": -0.3
+    "thigh_l": -0.7006,
+    "shin_l": 0.9536,
+    "foot_l": -0.2529,
+    "thigh_r": -0.2764,
+    "shin_r": 0.9745,
+    "foot_r": -0.6981
    }
   },
   {
    "t": 0.18,
    "pose": {
-    "thigh_l": -0.12,
-    "shin_l": 0.2,
-    "thigh_r": -0.1047,
-    "shin_r": 0.2094,
-    "upper_arm_l": -2.4,
-    "forearm_l": -0.3,
+    "torso": -0.02,
+    "neck": -0.092,
+    "head": -0.138,
+    "upper_arm_l": -2.73,
+    "forearm_l": -0.1,
     "hand_l": 0.0,
-    "upper_arm_r": 0.1745,
-    "forearm_r": -0.3491,
+    "upper_arm_r": 1.47,
+    "forearm_r": -1.0,
     "hand_r": 0.0,
-    "torso": -0.05,
-    "neck": -0.0349,
-    "head": -0.1047,
-    "foot_l": -0.1047,
-    "foot_r": -0.1047
+    "thigh_l": -0.5137,
+    "shin_l": 0.6073,
+    "foot_l": -0.0936,
+    "thigh_r": -0.1242,
+    "shin_r": 0.6367,
+    "foot_r": -0.5125
    }
   },
   {
    "t": 0.5,
    "pose": {
-    "thigh_l": -0.2094,
-    "shin_l": 0.3491,
-    "thigh_r": -0.1745,
-    "shin_r": 0.3142,
-    "upper_arm_l": -2.8798,
-    "forearm_l": -0.0873,
+    "torso": -0.18,
+    "neck": -0.088,
+    "head": -0.132,
+    "upper_arm_l": -2.32,
+    "forearm_l": -0.15,
     "hand_l": 0.0,
-    "upper_arm_r": 2.2689,
-    "forearm_r": -1.9199,
+    "upper_arm_r": 2.38,
+    "forearm_r": -1.5,
     "hand_r": 0.0,
-    "torso": -0.1745,
-    "neck": -0.0698,
-    "head": -0.2094,
-    "foot_l": -0.1396,
-    "foot_r": -0.1396
+    "thigh_l": -0.5506,
+    "shin_l": 0.6769,
+    "foot_l": -0.1263,
+    "thigh_r": -0.1551,
+    "shin_r": 0.7038,
+    "foot_r": -0.5487
    }
   }
  ]

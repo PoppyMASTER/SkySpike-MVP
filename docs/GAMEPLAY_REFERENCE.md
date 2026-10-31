@@ -88,6 +88,10 @@ Les vitesses de The Spike ne sont qu'une référence visuelle : le plafond du sm
 **Visée** : en assisté, la direction tenue pendant la frappe règle la profondeur par la vitesse sur une trajectoire au-dessus du filet
 (`assist_net_clearance`, de `assist_ratio_min` à `assist_ratio_max`). Manuel : angle seul (`aim_range`).
 
+**Animation** (visuelle uniquement) : le geste suit l'intention de frappe annoncée par la simulation (`serve_intent`) ; le suivi et l'atterrissage suivent le
+type réel au contact. Clips : `serve_prep_v1`, `serve_toss_v1`, `serve_jump_v1`, `serve_ground_v1`, `serve_float_v1`, `serve_smash_v1`, `land_float_v1`,
+`land_smash_v1` (générés par `tools/gen_serve_clips.py`). Vérification : `-- --capture-service DOSSIER [--video]` puis `python3 tools/service_sheets.py DOSSIER`.
+
 **IA** : mêmes commandes qu'un humain (`AiServe`) ; tirage par service (flux `ai`) : au sol avec `ai_serve_ground_chance` (appui bref, frappe au
 passage dans la zone), sinon charge (`ai_serve_charge` ± `ai_serve_charge_spread`), saut sous le ballon et frappe. Elle lit son propre lancer, sans téléportation.
 

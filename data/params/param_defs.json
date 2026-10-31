@@ -2505,6 +2505,66 @@
    "integer": false,
    "step": 0.05,
    "description": "Amplitude de la secousse de caméra sur une frappe rapide (0 = aucune). Toujours mesurée et plafonnée."
+  },
+  {
+   "id": "anim_serve_variants",
+   "group": "display",
+   "label": "Animation du service : trois frappes",
+   "unit": "0/1",
+   "default": 1,
+   "min": 0,
+   "max": 1,
+   "experimental_min": 0,
+   "experimental_max": 1,
+   "apply": "immediate",
+   "integer": true,
+   "step": 1,
+   "description": "1 = frappe au sol, flottante ou smashée selon l'intention de frappe ; 0 = le même geste pour tous (comparaison). Visuel seulement."
+  },
+  {
+   "id": "anim_serve_intensity",
+   "group": "display",
+   "label": "Animation du service : intensité",
+   "unit": "",
+   "default": 1.0,
+   "min": 0.5,
+   "max": 1.5,
+   "experimental_min": 0.5,
+   "experimental_max": 1.5,
+   "apply": "immediate",
+   "integer": false,
+   "step": 0.05,
+   "description": "Amplitude du buste, des bras et de la tête dans les gestes de service ; les jambes ne changent pas pour que les pieds restent plantés. Visuel seulement."
+  },
+  {
+   "id": "anim_follow_through_scale",
+   "group": "display",
+   "label": "Animation du service : durée du suivi",
+   "unit": "",
+   "default": 1.0,
+   "min": 0.5,
+   "max": 2.0,
+   "experimental_min": 0.5,
+   "experimental_max": 2.0,
+   "apply": "immediate",
+   "integer": false,
+   "step": 0.05,
+   "description": "Durée du suivi du geste après la frappe (2 = deux fois plus long). Visuel seulement."
+  },
+  {
+   "id": "anim_serve_blend_s",
+   "group": "display",
+   "label": "Animation du service : durée des fondus",
+   "unit": "s",
+   "default": 0.0,
+   "min": 0.0,
+   "max": 0.3,
+   "experimental_min": 0.0,
+   "experimental_max": 0.3,
+   "apply": "immediate",
+   "integer": false,
+   "step": 0.01,
+   "description": "Durée des transitions entre les phases du service ; 0 = durée propre à chaque clip. Visuel seulement."
   }
  ]
 }
