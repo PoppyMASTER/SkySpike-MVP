@@ -3,8 +3,9 @@
 Sandbox de volleyball 2D 3 contre 3 (vue de profil), sous **Godot 4.7.2 / GDScript**.
 Projet neuf, distinct de l'ancien SkySpike (archivé : dépôt `PoppyMASTER/Spike`, commit `5c3b1b7`).
 
-**État : jalon J1 (fondation).** Une scène de test fait rebondir un ballon à pas fixe ;
-données, paramètres, presets, mesures et tests sont en place. Les joueurs arrivent au J2.
+**État : jalon J2 (physique).** Un joueur (silhouette provisoire) court, saute, reçoit et smashe dans un terrain
+avec filet à collisions balayées ; un ballon d'entraînement est relancé à chaque atterrissage.
+Les six joueurs, le rallye et le score arrivent au J3.
 
 ## Lancer
 
@@ -15,7 +16,9 @@ godot --headless --path . -s tests/run_tests.gd  # tous les tests ; code de sort
 godot --headless --path . -s tests/run_tests.gd -- determinism   # filtre par nom de fichier
 ```
 
-En jeu : **F1** panneau sandbox · **Espace** pause · **N** avance d'un tick.
+En jeu (touches provisoires) : **← → / Q D** bouger · **Espace** sauter, puis **Espace** en l'air = smash ·
+**J** réception (au sol). Manette : stick gauche, **A** saut/smash, **X** réception.
+Debug : **F1** panneau sandbox · **F2** zones de contact · **P** pause · **N** un tick · **R** relancer.
 
 ## Où lire quoi
 

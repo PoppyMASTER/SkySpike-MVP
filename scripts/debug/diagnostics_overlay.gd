@@ -43,10 +43,15 @@ func _process(delta: float) -> void:
 		s.ball_position.x, s.ball_position.y, s.ball_velocity.x, s.ball_velocity.y])
 	var errors := GameLog.count(GameLog.Level.ERROR)
 	var warnings := GameLog.count(GameLog.Level.WARNING)
+	if not s.players.is_empty():
+		var pl := s.players[0]
+		lines.append("Joueur : x %.2f m, y %.2f m · vx %.2f · %s %.2f s" % [
+			pl.position.x, pl.position.y, pl.velocity.x, Enums.action_to_string(pl.action), pl.action_time])
 	lines.append("Journal : %d erreur(s), %d avertissement(s)" % [errors, warnings])
 	lines.append("Derniers événements :")
 	var events := runner.event_log
 	for i in range(maxi(0, events.size() - EVENTS_SHOWN), events.size()):
 		lines.append("  " + events[i].to_text())
-	lines.append("F1 : panneau sandbox · Espace : pause · N : un tick")
+	lines.append("Jouer : ←/→ ou Q/D bouger · Espace sauter, puis Espace = smash · J réception")
+	lines.append("F1 panneau · F2 zones · P pause · N un tick · R relancer")
 	_label.text = "\n".join(lines)

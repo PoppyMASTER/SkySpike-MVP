@@ -16,7 +16,10 @@ AiController (lit MatchState) ─────┘                                
 JSON ─► chargeurs (data/) ─► objets typés          ParamStore (unités, bornes, défauts) ─► MatchSim, rendu, debug
 ```
 
-État au J1 : `MatchSim` ne contient que le ballon (exercice de lancer) ; entrées, IA, animation arrivent aux J2–J4.
+État au J2 : `MatchSim` contient le ballon (exercice de lancer), le filet et un joueur humain ; IA et animation arrivent aux J3–J4.
+
+Ordre d'un tick : ballon (intégration, collision balayée du filet) → joueurs (mouvement, actions, contacts) → sol (atterrissage, relance).
+Entrées : `InputMapper.poll` (chaque image) → `InputLatch` → un `PlayerIntent` consommé par tick (les appuis ne sont ni perdus ni doublés).
 
 ## Couches et dépendances autorisées
 
@@ -63,7 +66,7 @@ tirages des contacts.
 Limite : reproductible sur la même machine et le même exécutable ; pas de garantie entre plateformes.
 La dérivation des graines est figée par un test : si une version de Godot la change, le test le signale.
 
-## Fichiers (J1)
+## Fichiers (J2)
 
 ```
 scenes/main.tscn                  → scripts/app/main.gd
@@ -71,8 +74,9 @@ scenes/match/match.tscn           → MatchRunner + MatchView + DebugLayer (Diag
 scripts/core/                     enums, game_log, match_rng, sim_clock, param_def, param_preset, param_store, param_ids
 scripts/data/                     load_issue, json_loader, schema_reader, param_def_loader, preset_store, character_repository
 scripts/characters/               stats/morphology/animation_set/character_definition, stat_conversion
-scripts/simulation/ball_body.gd
-scripts/gameplay/                 match_sim, match_state, match_event
+scripts/simulation/                ball_body, player_body, court_geometry, swept_collision, sweep_hit
+scripts/gameplay/                 match_sim, match_state, match_event, player_intent, player_actor, player_snapshot, contact_model, sim_context
+scripts/input/                    input_mapper, input_latch
 scripts/rendering/match_view.gd
 scripts/app/                      game_data, match_runner, main
 scripts/debug/                    sandbox_panel, param_row, diagnostics_overlay

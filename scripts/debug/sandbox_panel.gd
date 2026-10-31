@@ -2,12 +2,16 @@ class_name SandboxPanel
 extends PanelContainer
 ## Panneau de réglage (F1). Ne met pas le match en pause. Modifie les paramètres
 ## uniquement via ParamStore et contrôle la simulation via l'API de MatchRunner.
-## Onglets : Simulation (contrôles + presets), un onglet par groupe de paramètres, Données.
+## Touches : F1 panneau, F2 zones de contact, P pause, N un tick, R relancer (même graine).
+## Onglets : Contrôle (contrôles + presets), un onglet par groupe de paramètres, Données.
 
 const PANEL_WIDTH := 460.0
 const GROUP_TITLES: Dictionary = {
 	"simulation": "Simulation",
 	"physics": "Physique",
+	"court": "Terrain",
+	"player": "Joueur",
+	"contact": "Contacts",
 	"drill": "Démo J1",
 	"conversion": "Stats → physique",
 }
@@ -64,10 +68,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_F1:
 			visible = not visible
 			_refresh_data_tab()
-		KEY_SPACE:
+		KEY_F2:
+			if runner.view != null:
+				runner.view.show_zones = not runner.view.show_zones
+		KEY_P:
 			runner.set_paused(not runner.is_paused())
 		KEY_N:
 			runner.step_once()
+		KEY_R:
+			runner.restart(runner.current_state.seed_value)
 
 
 # ------------------------------------------------------------------ onglet Simulation

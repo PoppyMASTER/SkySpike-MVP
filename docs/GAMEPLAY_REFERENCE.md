@@ -19,7 +19,7 @@ double touche = faute, touche de bloc non comptée. Nombre de points réglable.
 
 Phases : `READY → SERVE_PREP → BALL_LIVE → POINT_AWARDED → RESET → READY`.
 
-## Touches par défaut [Validé, provisoire, Prévu J2]
+## Touches par défaut [Validé, provisoire ; J2 : move, jump_attack et receive_block_feint implémentées]
 
 | Action | Clavier | Manette |
 | --- | --- | --- |
@@ -32,9 +32,19 @@ Phases : `READY → SERVE_PREP → BALL_LIVE → POINT_AWARDED → RESET → REA
 En visée manuelle, la direction = l'axe horizontal au moment du contact. Passe et réception sont deux touches
 distinctes, sans choix automatique.
 
-Debug (J1) : F1 panneau, Espace pause, N un tick. Les touches de debug seront déplacées au J2 pour libérer Espace.
+Debug (depuis J2) : F1 panneau, F2 zones de contact, P pause, N un tick, R relancer (même graine). Clavier : ← → et Q/A/D (couvre QWERTY et AZERTY).
 
-## Machine d'actions [Prévu J2–J3]
+## Implémenté au J2 [Calibration pour toutes les valeurs]
+
+États : `FREE`, `RECEIVE`, `AIR`, `SPIKE`, `RECOVER` (`Enums.ActionState`). Le reste de la machine arrive au J3.
+- Saut : `jump_attack` au sol ; vitesse de décollage = √(2·g·apex), apex issu de la stat de saut. Contrôle aérien réglable.
+- Smash : 2e appui de `jump_attack` en l'air, une fois par saut. Réception : `receive_block_feint` au sol.
+- Contact : pendant la fenêtre `[on, off]` de l'action, si le segment parcouru par le ballon pendant le tick passe à moins de `rayon` du centre de la zone, un contact a lieu et ferme la fenêtre. Un contact par action.
+- Qualité `q` et sortie : `ContactModel` (voir plus bas). Bruit d'angle = stat de précision, tiré dans le flux `contacts`.
+- Événements : `ACTION_STARTED`, `CONTACT` (q, e_t, e_s, vitesse, angle), `ACTION_MISSED`, `PLAYER_JUMPED`, `PLAYER_LANDED`, `NET_HIT`.
+- Filet : boîte de collision, rebond × `net_restitution`. Le joueur ne traverse pas le filet.
+
+## Machine d'actions complète [Prévu J3]
 
 États : `LOCKED`, `FREE`, `RECEIVE`, `SET`, `BLOCK_READY`, `AIR_ATTACK`, `SPIKE`, `FEINT`, `BLOCK_AIR`,
 `LAND`, `RECOVER`, `SERVE_HOLD`, `SERVE_TOSS`, `SERVE_JUMP`, `SERVE_HIT`.

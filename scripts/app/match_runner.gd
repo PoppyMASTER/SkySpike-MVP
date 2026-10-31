@@ -18,6 +18,10 @@ var clock: SimClock
 var previous_state: MatchState
 var current_state: MatchState
 var event_log: Array[MatchEvent] = []
+## Tampon des entrées humaines (un seul joueur contrôlé au J2).
+var input := InputLatch.new()
+## Personnage contrôlé (identifiant dans data/characters).
+@export var player_character := "hammer_01"
 
 ## Métriques mesurées (affichées par le diagnostic).
 var fps := 0.0
@@ -29,13 +33,21 @@ var ticks_last_frame := 0
 func _ready() -> void:
 	if data == null:
 		data = GameData.load_default()
+	InputMapper.register_actions()
 	restart(start_seed)
 
 
 ## Nouveau match avec cette graine ; applique aussi les paramètres « prochain match ».
 func restart(seed_value: int) -> void:
 	clock = SimClock.new(data.params.get_value(ParamIds.SIM_HZ))
-	sim = MatchSim.new(data.params, seed_value, clock.dt)
+	var lineup: Array[CharacterDefinition] = []
+	var character := data.characters.get_character(player_character)
+	if character != null:
+		lineup.append(character)
+	else:
+		GameLog.error("Match", "personnage « %s » introuvable : match sans joueur" % player_character)
+	sim = MatchSim.new(data.params, seed_value, clock.dt, lineup)
+	input = InputLatch.new()
 	current_state = sim.state()
 	previous_state = current_state
 	event_log.clear()
@@ -47,6 +59,9 @@ func _process(delta: float) -> void:
 	clock.time_scale = data.params.get_value(ParamIds.TIME_SCALE)
 	clock.max_frame_s = data.params.get_value(ParamIds.MAX_FRAME_S)
 	clock.max_ticks_per_frame = int(data.params.get_value(ParamIds.MAX_TICKS_PER_FRAME))
+	InputMapper.poll(input)
+	if clock.paused:
+		input.clear_presses()
 	var steps := clock.advance(delta)
 	var t0 := Time.get_ticks_usec()
 	for i in steps:
@@ -63,9 +78,12 @@ func _process(delta: float) -> void:
 
 
 ## Un tick complet. Public pour les tests et le mode pas à pas.
-func run_one_tick() -> void:
+## Sans argument, consomme les entrées du clavier ou de la manette.
+func run_one_tick(intents: Array[PlayerIntent] = []) -> void:
 	previous_state = current_state
-	var events := sim.tick()
+	if intents.is_empty() and not sim.actors.is_empty():
+		intents = [input.consume()]
+	var events := sim.tick(intents)
 	clock.on_tick_done()
 	current_state = sim.state()
 	if not events.is_empty():

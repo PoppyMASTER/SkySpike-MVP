@@ -4,6 +4,9 @@ extends RefCounted
 
 enum Role { ATTACKER, SETTER, DEFENDER }
 
+## États d'action d'un joueur (J2 : sous-ensemble de la machine complète du J3).
+enum ActionState { FREE, RECEIVE, AIR, SPIKE, RECOVER }
+
 const ROLE_NAMES: Dictionary = {
 	Role.ATTACKER: "attacker",
 	Role.SETTER: "setter",
@@ -21,3 +24,7 @@ static func role_from_string(text: String) -> int:
 
 static func role_to_string(role: int) -> String:
 	return ROLE_NAMES.get(role, "unknown")
+
+
+static func action_to_string(state: int) -> String:
+	return ActionState.keys()[state] if state >= 0 and state < ActionState.size() else "UNKNOWN"

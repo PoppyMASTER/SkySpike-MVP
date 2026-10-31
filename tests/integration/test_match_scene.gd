@@ -21,3 +21,20 @@ func test_match_scene_runs_ticks_without_errors() -> void:
 	assert_eq(runner.current_state.tick, 0, "relance remet le tick à 0")
 	assert_eq(runner.current_state.seed_value, 5, "nouvelle graine prise en compte")
 	runner.queue_free()
+
+
+func test_keyboard_input_moves_the_player_through_the_runner() -> void:
+	var tree := Engine.get_main_loop() as SceneTree
+	var runner: MatchRunner = (load(MATCH_SCENE) as PackedScene).instantiate()
+	runner.data = GameData.load_default()
+	tree.root.add_child(runner)
+	InputMapper.register_actions()
+	runner.restart(1)
+	var start_x := runner.current_state.players[0].position.x
+	Input.action_press(InputMapper.MOVE_RIGHT)
+	for i in 30:
+		InputMapper.poll(runner.input)
+		runner.run_one_tick()
+	Input.action_release(InputMapper.MOVE_RIGHT)
+	assert_true(runner.current_state.players[0].position.x > start_x + 0.5, "le joueur avance quand → est tenue")
+	runner.queue_free()

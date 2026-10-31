@@ -21,3 +21,14 @@ Format : date — décision — raison. Les choix « tout comme recommandé » v
 | 31/10/2026 | Stats manquantes → gabarit de rôle (`stats/_role_<rôle>.json`) | Repli défini et visible plutôt que 0 ou 50 implicite |
 | 31/10/2026 | J1 : « exercice de lancer » dans `MatchSim` (le ballon est relancé au hasard à chaque atterrissage) | Démontrer la boucle fixe et la reproductibilité avant les joueurs ; supprimé au J3 avec ses paramètres `drill_*` |
 | 31/10/2026 | Rayon du ballon par défaut 0.105 m (réglementaire), gravité 10 m/s² | Valeurs de départ provisoires ; l'ancien jeu (0.12 m, 11 m/s²) reste comparable via `legacy_reference` |
+| 31/10/2026 | J1 validé par Djebril (« c ok ») | Feu vert pour le J2 |
+| 31/10/2026 | J2 : collisions balayées (segment départ → arrivée contre boîte du filet, coins arrondis), un seul impact par tick, reste du déplacement abandonné | Un ballon à 60 m/s ne traverse pas un filet de 10 cm, à 60, 120 et 240 Hz (test). Approximation : trajet droit sur un tick |
+| 31/10/2026 | J2 : ordre d'un tick = ballon + filet → joueurs (mouvement, actions, contacts) → sol | Un contact qui relève le ballon annule l'atterrissage du même tick |
+| 31/10/2026 | J2 : contact = le centre du ballon traverse la zone (segment du tick contre cercle) pendant la fenêtre active ; un contact par action | Pas de contact « automatique » ; le marqueur d'animation ne déclenche rien |
+| 31/10/2026 | J2 : saut au sol, smash = 2e appui de saut en l'air (un seul par saut), réception = J au sol uniquement | Table de touches validée : `jump_attack` sert aux deux |
+| 31/10/2026 | J2 : visée = axe horizontal tenu au contact (±`aim_range`), pas de mode assisté/manuel avant le J3 | Le choix du mode se fait dans l'écran de départ (J3) |
+| 31/10/2026 | J2 : limites du joueur = filet (moitié d'épaisseur + `player_half_width`) et ligne de fond + `court_out_margin` ; terrain et filet appliqués au prochain match | Pas de collision joueur-filet par la morphologie (V1 : morphologie visuelle seulement) |
+| 31/10/2026 | J2 : `InputLatch` entre images et ticks ; actions déclarées dans `InputMapper` (pas dans `project.godot`) | Aucun appui perdu ni doublé à 30/60/144 i/s ; touches provisoires faciles à changer |
+| 31/10/2026 | J2 : touches de debug déplacées : P pause, N un tick, R relancer, F2 zones, F1 panneau | Espace devient le saut |
+| 31/10/2026 | J2 : seules les actions utilisées existent (réception, smash) ; passe, service, feinte, bloc au J3 | Pas de code ni d'entrée « pour plus tard » |
+| 31/10/2026 | Cahier visuel du mannequin reçu de Djebril (voir ROADMAP, J4) : gris anthracite mat, proportions naturelles, articulations marquées, liseré bleu (joueur) / rouge (adverse), `Skeleton2D`/`Bone2D` sans étirement, bras et jambes lisibles, remplaçable par du pixel art sans toucher à la simulation | À réaliser au J4 ; la silhouette rectangulaire du J2 est provisoire |
