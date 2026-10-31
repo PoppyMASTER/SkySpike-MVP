@@ -16,6 +16,7 @@ func _ready() -> void:
 	_handle_sim_args(data)
 	_handle_anim_sheet_args(data)
 	_handle_capture_args()
+	_handle_serve_capture_args()
 
 
 ## `-- --sim N` : N matchs IA contre IA sans affichage (graines 1..N), résumé en console, puis quitte.
@@ -106,6 +107,43 @@ func _handle_capture_args() -> void:
 	Input.parse_input_event(f1)
 	await get_tree().create_timer(0.3).timeout
 	await _shot(runner, dir.path_join("j4_09_panneau.png"))
+	get_tree().quit()
+
+
+## `-- --capture-serve DOSSIER` : le joueur humain sert (graine 2) ; captures de la prévisualisation du service
+## (tenue, lancer, frappe courte / moyenne / longue).
+func _handle_serve_capture_args() -> void:
+	var args := OS.get_cmdline_user_args()
+	var i := args.find("--capture-serve")
+	if i < 0 or i + 1 >= args.size():
+		return
+	var dir := args[i + 1]
+	DirAccess.make_dir_recursive_absolute(dir)
+	var runner: MatchRunner = get_child(get_child_count() - 1)
+	runner.human_slot = 0
+	runner.restart(2)
+	runner.set_paused(true)
+	await get_tree().process_frame
+	var server := runner.sim.ctx.rally.server_slot
+	var step := func(axis: float, press := false) -> void:
+		var intents := runner.ai.intents(runner.current_state)
+		intents[server] = PlayerIntent.make(axis, false, false, false, false, press)
+		runner.run_one_tick(intents)
+	while runner.sim.actors[server].state != Enums.ActionState.SERVE_HOLD:
+		step.call(0.0)
+	var facing := runner.sim.actors[server].facing
+	step.call(float(facing))
+	await _shot(runner, dir.path_join("serve_01_tenue_avant.png"))
+	step.call(-float(facing))
+	await _shot(runner, dir.path_join("serve_02_tenue_arriere.png"))
+	step.call(0.0, true)
+	for t in 107:
+		step.call(0.0)
+	var names := ["serve_03_frappe_longue", "serve_04_frappe_neutre", "serve_05_frappe_courte"]
+	var axes := [float(facing), 0.0, -float(facing)]
+	for k in 3:
+		step.call(axes[k])
+		await _shot(runner, dir.path_join(names[k] + ".png"))
 	get_tree().quit()
 
 
