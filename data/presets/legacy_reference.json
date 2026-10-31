@@ -1,0 +1,19 @@
+{
+ "schema_version": 1,
+ "id": "legacy_reference",
+ "base": "default",
+ "experimental": false,
+ "notes": "Valeurs de l'ancien SkySpike (audit du 30/10/2026, commit 5c3b1b7) quand une équivalence existe. Références de comparaison, pas des vérités d'équilibrage.",
+ "values": {
+  "ball_gravity": 11.0,
+  "ball_radius": 0.12,
+  "speed_min": 3.6,
+  "speed_max": 7.8,
+  "jump_apex_min": 1.45,
+  "jump_apex_max": 2.2,
+  "spike_speed_min": 30.0,
+  "spike_speed_max": 45.0,
+  "serve_speed_min": 9.5,
+  "serve_speed_max": 24.0
+ }
+}

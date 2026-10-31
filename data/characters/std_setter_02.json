@@ -1,0 +1,8 @@
+{
+ "schema_version": 1,
+ "id": "std_setter_02",
+ "display_name": "Passeuse Élancée",
+ "role": "setter",
+ "stats_ref": "characters/stats/std_setter_02.json",
+ "morphology_ref": "morphology/std_setter_02.json"
+}

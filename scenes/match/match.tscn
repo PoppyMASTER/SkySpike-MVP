@@ -1,0 +1,20 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/app/match_runner.gd" id="1_runner"]
+[ext_resource type="Script" path="res://scripts/rendering/match_view.gd" id="2_view"]
+[ext_resource type="Script" path="res://scripts/debug/diagnostics_overlay.gd" id="3_diag"]
+[ext_resource type="Script" path="res://scripts/debug/sandbox_panel.gd" id="4_panel"]
+
+[node name="Match" type="Node"]
+script = ExtResource("1_runner")
+
+[node name="MatchView" type="Node2D" parent="."]
+script = ExtResource("2_view")
+
+[node name="DebugLayer" type="CanvasLayer" parent="."]
+
+[node name="DiagnosticsOverlay" type="PanelContainer" parent="DebugLayer"]
+script = ExtResource("3_diag")
+
+[node name="SandboxPanel" type="PanelContainer" parent="DebugLayer"]
+script = ExtResource("4_panel")

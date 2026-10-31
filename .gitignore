@@ -1,0 +1,10 @@
+# Godot
+.godot/
+export/
+build/
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+# Local outputs
+tests/output/

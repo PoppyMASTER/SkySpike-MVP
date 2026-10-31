@@ -1,0 +1,7 @@
+{
+ "schema_version": 1,
+ "id": "std_setter_01",
+ "display_name": "Passeur Standard",
+ "role": "setter",
+ "stats_ref": "characters/stats/std_setter_01.json"
+}

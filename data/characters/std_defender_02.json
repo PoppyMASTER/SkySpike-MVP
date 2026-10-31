@@ -1,0 +1,8 @@
+{
+ "schema_version": 1,
+ "id": "std_defender_02",
+ "display_name": "Défenseuse Trapue",
+ "role": "defender",
+ "stats_ref": "characters/stats/std_defender_02.json",
+ "morphology_ref": "morphology/std_defender_02.json"
+}

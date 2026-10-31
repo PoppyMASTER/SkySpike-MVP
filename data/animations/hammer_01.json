@@ -1,0 +1,7 @@
+{
+ "schema_version": 1,
+ "default_set": "standard_v1",
+ "overrides": {
+  "spike": "hammer_spike_v1"
+ }
+}

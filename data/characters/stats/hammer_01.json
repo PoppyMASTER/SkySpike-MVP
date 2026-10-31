@@ -1,0 +1,11 @@
+{
+ "schema_version": 1,
+ "attack_power": 75,
+ "receive": 35,
+ "block": 45,
+ "set_power": 40,
+ "set_accuracy": 35,
+ "spike_accuracy": 65,
+ "speed": 50,
+ "jump": 70
+}

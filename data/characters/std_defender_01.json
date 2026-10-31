@@ -1,0 +1,7 @@
+{
+ "schema_version": 1,
+ "id": "std_defender_01",
+ "display_name": "Défenseur Standard",
+ "role": "defender",
+ "stats_ref": "characters/stats/std_defender_01.json"
+}

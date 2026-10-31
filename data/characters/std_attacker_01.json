@@ -1,0 +1,7 @@
+{
+ "schema_version": 1,
+ "id": "std_attacker_01",
+ "display_name": "Attaquant Standard",
+ "role": "attacker",
+ "stats_ref": "characters/stats/std_attacker_01.json"
+}
