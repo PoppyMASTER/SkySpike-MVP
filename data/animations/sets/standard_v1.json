@@ -11,6 +11,8 @@
   "spike": "spike_v1",
   "serve": "serve_v1",
   "block": "block_v1",
-  "feint": "feint_v1"
+  "feint": "feint_v1",
+  "serve_prep": "serve_prep_v1",
+  "serve_toss": "serve_toss_v1"
  }
 }

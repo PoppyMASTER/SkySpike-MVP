@@ -29,6 +29,14 @@ var landing_max := 0.0
 var clears_net := true
 ## Atterrit dans le camp adverse (dans les lignes).
 var lands_in := false
+## Sommet de l'arc du lancer.
+var apex_point := Vector2.ZERO
+## Partie de l'arc où le ballon est à une hauteur que le serveur peut atteindre (du sol au meilleur saut) : zone de
+## frappe POTENTIELLE. Elle ne promet aucun contact : la simulation décide à la frappe.
+var reach_path := PackedVector2Array()
+## Hauteurs (m) de la bande atteignable : bas = frappe au sol, haut = frappe au sommet du meilleur saut.
+var reach_low := 0.0
+var reach_high := 0.0
 
 
 ## Prévision pour le serveur `server` ; null s'il n'est pas en train de servir.
@@ -39,6 +47,8 @@ static func compute(server: PlayerActor, ctx: SimContext) -> ServePreview:
 	if not (state == Enums.ActionState.SERVE_HOLD or state == Enums.ActionState.SERVE_TOSS or state == Enums.ActionState.SERVE_JUMP):
 		return null
 	var p := ctx.params
+	if state != Enums.ActionState.SERVE_HOLD and server.since_toss > p.get_value(ParamIds.PREVIEW_AFTER_TOSS_S):
+		return null   # la prévision a fait son temps (réglage d'affichage)
 	var out := ServePreview.new()
 	out.planned = state != Enums.ActionState.SERVE_JUMP
 	var spec := ContactSpec.of(ContactSpec.SERVE, p)
@@ -64,6 +74,15 @@ static func compute(server: PlayerActor, ctx: SimContext) -> ServePreview:
 			break
 	for i in range(0, balls.size(), SAMPLE_EVERY_TOSS):
 		out.toss_path.append(balls[i])
+	out.apex_point = balls[0]
+	for b in balls:
+		if b.y > out.apex_point.y:
+			out.apex_point = b
+	out.reach_low = spec.dy - spec.radius
+	out.reach_high = spec.dy + StatConversion.jump_apex(server.character.stats, p) + spec.radius
+	for pt in out.toss_path:
+		if pt.y >= out.reach_low and pt.y <= out.reach_high:
+			out.reach_path.append(pt)
 	var gp: float = p.get_value(ParamIds.PLAYER_GRAVITY)
 	var x := server.body.position.x
 	var feet_y := server.body.position.y

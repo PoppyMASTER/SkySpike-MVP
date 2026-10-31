@@ -52,6 +52,7 @@ func restart(seed_value: int) -> void:
 	previous_state = current_state
 	event_log.clear()
 	if view != null:
+		view.params = data.params
 		view.setup_players(data.clips, lineup)
 	restarted.emit(seed_value)
 	GameLog.info("Match", "nouveau match, graine %d, %d ticks/s" % [seed_value, roundi(1.0 / clock.dt)])
@@ -95,6 +96,8 @@ func run_one_tick(intents: Array[PlayerIntent] = []) -> void:
 		while event_log.size() > EVENT_LOG_SIZE:
 			event_log.pop_front()
 		events_emitted.emit(events)
+		if view != null:
+			view.on_events(events, current_state)
 
 
 func set_paused(paused: bool) -> void:

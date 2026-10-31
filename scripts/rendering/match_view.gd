@@ -22,6 +22,11 @@ var previous_state: MatchState
 var current_state: MatchState
 var alpha := 0.0
 var font: Font
+## Réglages d'affichage (lecture seule) : opacité, teinte, durée de la prévision du service.
+var params: ParamStore
+## Effets de frappe (impacts, traînée, vitesse, caméra) : purement visuels, pilotés par le temps de simulation.
+var fx := ImpactFx.new()
+var camera_px := Vector2.ZERO
 
 ## Réglages de debug (touches F2 à F5, panneau F1 → Animation).
 var show_zones := false
@@ -97,9 +102,33 @@ func show_states(previous: MatchState, current: MatchState, render_alpha: float)
 	previous_state = previous
 	current_state = current
 	alpha = render_alpha
+	_update_fx()
 	_update_rigs()
 	queue_redraw()
 	overlay.queue_redraw()
+
+
+## Transmet les événements d'un tick aux effets (appelé par MatchRunner).
+func on_events(events: Array[MatchEvent], state: MatchState) -> void:
+	if fx_enabled():
+		fx.on_events(events, state)
+
+
+func fx_enabled() -> bool:
+	return params == null or params.get_value(ParamIds.FX_ENABLED) >= 0.5
+
+
+func fx_time() -> float:
+	return ImpactFx.time_of(current_state) + alpha * current_state.tick_seconds
+
+
+func _update_fx() -> void:
+	if not fx_enabled():
+		fx.clear()
+		camera_px = Vector2.ZERO
+		return
+	fx.on_state(current_state, params.get_value(ParamIds.FX_TRAIL_S) if params != null else 0.4)
+	camera_px = fx.camera_offset(fx_time(), params.get_value(ParamIds.FX_CAMERA_STRENGTH) if params != null else 0.5)
 
 
 ## Avance l'aperçu d'animation avec le temps réel (indépendant de la simulation, de la pause et du ralenti).
@@ -169,7 +198,7 @@ func pixels_per_meter() -> float:
 func to_screen(world: Vector2) -> Vector2:
 	var size := viewport_size()
 	var k := pixels_per_meter()
-	return Vector2(size.x * 0.5 + world.x * k, size.y * GROUND_RATIO - world.y * k)
+	return Vector2(size.x * 0.5 + world.x * k, size.y * GROUND_RATIO - world.y * k) + camera_px
 
 
 func _draw() -> void:

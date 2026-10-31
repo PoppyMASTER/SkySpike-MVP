@@ -5,7 +5,7 @@ extends RefCounted
 
 const STANDARD_SET := "standard_v1"
 const ACTIONS: Array[String] = [
-	"idle", "run", "jump", "land", "receive", "set", "spike", "serve", "block", "feint",
+	"idle", "run", "jump", "land", "receive", "set", "spike", "serve", "serve_prep", "serve_toss", "block", "feint",
 ]
 
 var default_set := STANDARD_SET

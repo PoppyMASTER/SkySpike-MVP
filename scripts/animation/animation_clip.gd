@@ -9,14 +9,15 @@ const SCHEMA_VERSION := 1
 const MAX_DURATION_S := 5.0
 const ID_PATTERN := "^[a-z][a-z0-9_]*$"
 const KEYS: Array[String] = ["schema_version", "id", "action", "duration_s", "loop", "time_domain", "pose_mode",
-	"default_interpolation", "foot_lock", "grounded", "air_legs", "blend_in_s", "stride_m", "air_ref_speed",
+	"default_interpolation", "foot_lock", "grounded", "air_legs", "move_legs", "blend_in_s", "stride_m", "air_ref_speed",
 	"window_start", "keyframes", "events"]
 
 ## Comment le temps du clip est choisi à partir de l'état de la simulation :
 ## seconds = secondes écoulées dans l'état ; window = caler le repère `impact` sur l'instant idéal de l'action ;
 ## loop_time = temps de jeu (boucle) ; distance = distance parcourue (cycle de course) ;
-## air_velocity = vitesse verticale (montée → chute) ; length = durée de l'état (atterrissage).
-const DOMAINS: Array[String] = ["seconds", "window", "loop_time", "distance", "air_velocity", "length"]
+## air_velocity = vitesse verticale (montée → chute) ; length = durée de l'état (atterrissage) ;
+## charge = charge du lancer de service (0 → 1).
+const DOMAINS: Array[String] = ["seconds", "window", "loop_time", "distance", "air_velocity", "length", "charge"]
 
 var id := ""
 var action := ""
@@ -32,6 +33,8 @@ var air_ref_speed := 9.5
 var grounded := true
 ## Si le joueur est en l'air, les jambes sont reprises de cette animation (ex. « jump ») ; "" = jambes du clip.
 var air_legs := ""
+## Si le joueur est au sol et se déplace, les jambes sont reprises de cette animation (ex. « run ») : pas de glissement.
+var move_legs := ""
 var blend_in_s := 0.08
 ## Repère de départ de la fenêtre (domaine window), "" = début du clip.
 var window_start := ""
@@ -120,6 +123,7 @@ static func from_file(path: String, issues: Array[LoadIssue]) -> AnimationClip:
 	c.smooth = interp == "smooth"
 	c.grounded = r.read_bool("grounded", true)
 	c.air_legs = r.optional_string("air_legs", "")
+	c.move_legs = r.optional_string("move_legs", "")
 	c.window_start = r.optional_string("window_start", "")
 	c.blend_in_s = r.read_float("blend_in_s", 0.0, 1.0, 0.08, false).value
 	c.stride_m = r.read_float("stride_m", 0.2, 10.0, 1.9, false).value

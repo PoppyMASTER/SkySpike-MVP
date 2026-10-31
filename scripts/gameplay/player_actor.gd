@@ -16,6 +16,8 @@ var body := PlayerBody.new()
 var facing := 1
 var state: int = Enums.ActionState.FREE
 var state_time := 0.0
+## Secondes depuis le lancer du ballon (service) : sert seulement à l'affichage de la prévision.
+var since_toss := 0.0
 
 var _kind: StringName = &""
 var _recover_len := 0.0
@@ -83,6 +85,7 @@ func serve_hold_position(p: ParamStore) -> Vector2:
 func tick(intent: PlayerIntent, ctx: SimContext, ball_from: Vector2) -> void:
 	var p := ctx.params
 	state_time += ctx.dt
+	since_toss += ctx.dt
 	if _locked:
 		intent = PlayerIntent.make()
 	_axis = intent.move_axis
@@ -118,6 +121,8 @@ func snapshot(p: ParamStore) -> PlayerSnapshot:
 	s.grounded = body.grounded
 	s.action = state
 	s.action_time = state_time
+	if state == Enums.ActionState.SERVE_HOLD:
+		s.serve_charge = _toss.fraction(p)
 	var receive := ContactSpec.of(ContactSpec.RECEIVE, p)
 	var spike := ContactSpec.of(ContactSpec.SPIKE, p)
 	s.receive_center = receive.center(body.position, facing)
@@ -189,6 +194,7 @@ func _handle_input(intent: PlayerIntent, ctx: SimContext) -> void:
 func _charge_toss(intent: PlayerIntent, ctx: SimContext) -> void:
 	if _toss.update(intent, ctx.dt, ctx.params) != ServeCharge.Result.TOSS:
 		return
+	since_toss = 0.0
 	ctx.ball_held = false
 	ctx.ball.position = serve_hold_position(ctx.params)
 	ctx.ball.velocity = _toss.toss_velocity(ctx.params, facing)

@@ -95,7 +95,8 @@ passage dans la zone), sinon charge (`ai_serve_charge` ± `ai_serve_charge_sprea
 cercle = zone de frappe ; trajectoire après la frappe, atterrissage ± 1 écart-type. **Prévision de la balle** (tout joueur, permanente) : trajectoire
 pâle, anneau d'atterrissage (vert dans les lignes, orange dehors, croix rouge au filet).
 
-**Reste à faire** : étape B (prévisualisation enrichie, animations du serveur), étape C (impacts, traînée, vitesse, caméra). Le saut de service garde l'animation provisoire.
+**Étape B** : la prévision montre départ, montée, sommet, descente et bande de frappe potentielle (réglages `preview_*`). Le serveur a des poses dédiées : attente, préparation (accroupi selon la charge), lancer, bras armé en l'air, frappe, suivi, atterrissage ; jambes de course quand il bouge.
+**Étape C** : impact, traînée selon la vitesse, indicateur de vitesse (km/h), secousse de caméra mesurée ; réglages `fx_*` (groupe Affichage). Tout est visuel : aucun effet sur la physique.
 
 ## Contre [Prévu J3]
 

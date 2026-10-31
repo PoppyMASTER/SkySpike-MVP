@@ -26,7 +26,11 @@ func _draw() -> void:
 		_draw_ball_prediction(state.ball_prediction)
 	if state.serve_preview != null:
 		_draw_serve_preview(state.serve_preview, k)
+	if view.fx_enabled():
+		_draw_trail()
 	_draw_ball(k)
+	if view.fx_enabled():
+		_draw_impacts(k)
 	_draw_scoreboard(get_viewport_rect().size)
 	if view.preview_clip != null:
 		_draw_preview_info()
@@ -97,11 +101,22 @@ func _draw_ball_prediction(pred: BallPrediction) -> void:
 ## Prévision du service : arc du lancer (points blancs), zone et point de frappe, trajectoire
 ## après la frappe (verte si elle passe le filet, rouge sinon) et zone d'atterrissage (± 1 écart-type).
 func _draw_serve_preview(pv: ServePreview, k: float) -> void:
-	_draw_dotted(pv.toss_path, Color(1, 1, 1, 0.55), 2.5)
+	var params := view.params
+	var opacity := 0.6
+	var tint := Color.WHITE
+	var shown := true
+	if params != null:
+		opacity = params.get_value(ParamIds.PREVIEW_OPACITY)
+		tint = Color.from_hsv(params.get_value(ParamIds.PREVIEW_HUE), params.get_value(ParamIds.PREVIEW_SATURATION), 1.0)
+		shown = params.get_value(ParamIds.PREVIEW_VISIBLE) >= 0.5
+	if shown:
+		_draw_toss_arc(pv, k, tint, opacity)
 	if pv.charge > 0.0 and pv.toss_path.size() > 0:
 		var base := view.to_screen(pv.toss_path[0]) + Vector2(-26.0, 22.0)
 		draw_rect(Rect2(base, Vector2(52.0, 6.0)), Color(1, 1, 1, 0.2))
 		draw_rect(Rect2(base, Vector2(52.0 * pv.charge, 6.0)), COLOR_HUMAN)
+	if not shown:
+		return
 	if not pv.can_hit:
 		var hint := view.to_screen(pv.toss_path[pv.toss_path.size() / 2]) if pv.toss_path.size() > 0 else Vector2.ZERO
 		draw_string(view.font, hint + Vector2(14, 0), "hors de portée", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 0.55, 0.5))
@@ -124,6 +139,75 @@ func _draw_serve_preview(pv: ServePreview, k: float) -> void:
 	elif not pv.lands_in:
 		text += " · HORS TERRAIN"
 	draw_string(view.font, hit + Vector2(16, -10), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, color)
+
+
+## Arc du lancer : départ, montée (plus marquée), sommet, descente (plus pâle) et bande de frappe POTENTIELLE
+## (hauteurs atteignables du sol au meilleur saut). Elle n'annonce pas un contact : la simulation le décide.
+func _draw_toss_arc(pv: ServePreview, k: float, tint: Color, opacity: float) -> void:
+	if pv.toss_path.size() < 2:
+		return
+	var apex_index := 0
+	for i in pv.toss_path.size():
+		if pv.toss_path[i].y >= pv.toss_path[apex_index].y:
+			apex_index = i
+	for i in pv.toss_path.size():
+		var rising := i <= apex_index
+		draw_circle(view.to_screen(pv.toss_path[i]), 2.5 if rising else 2.0, Color(tint, opacity * (0.95 if rising else 0.6)))
+	for point in pv.reach_path:   # bande de frappe potentielle
+		draw_circle(view.to_screen(point), 6.0, Color(COLOR_ZONE, 0.28 * opacity))
+	var start := view.to_screen(pv.toss_path[0])
+	draw_arc(start, 7.0, 0.0, TAU, 16, Color(tint, opacity), 2.0, true)
+	var top := view.to_screen(pv.apex_point)
+	draw_colored_polygon(PackedVector2Array([top + Vector2(0, -7), top + Vector2(6, 0), top + Vector2(0, 7), top + Vector2(-6, 0)]), Color(tint, opacity))
+	draw_string(view.font, top + Vector2(10, -6), "sommet %.1f m" % pv.apex_point.y, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(tint, opacity))
+	if pv.reach_path.size() > 0:
+		var mid := view.to_screen(pv.reach_path[pv.reach_path.size() / 2])
+		draw_string(view.font, mid + Vector2(-110, 4), "frappe possible", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(COLOR_ZONE, 0.85 * opacity))
+
+
+## Traînée du ballon : plus rapide, plus épaisse et plus marquée ; elle s'efface avec le temps de simulation.
+func _draw_trail() -> void:
+	var trail_s: float = view.params.get_value(ParamIds.FX_TRAIL_S) if view.params != null else 0.4
+	if trail_s <= 0.0 or view.fx.trail.size() < 2:
+		return
+	var now := view.fx_time()
+	for i in range(1, view.fx.trail.size()):
+		var a: Dictionary = view.fx.trail[i - 1]
+		var b: Dictionary = view.fx.trail[i]
+		var strength := ImpactFx.trail_strength(float(b.v))
+		var fade := clampf(1.0 - (now - float(b.t)) / trail_s, 0.0, 1.0)
+		if strength <= 0.0 or fade <= 0.0:
+			continue
+		var color := Color(1, 1, 1).lerp(Color("ff9a3c"), strength)
+		draw_line(view.to_screen(a.p), view.to_screen(b.p), Color(color, 0.7 * fade * strength), ImpactFx.trail_width(float(b.v), 5.0), true)
+
+
+## Impacts : anneau et étincelles proportionnels à la vitesse (double anneau pour un smash), indicateur de vitesse.
+func _draw_impacts(k: float) -> void:
+	var now := view.fx_time()
+	var scale: float = view.params.get_value(ParamIds.FX_IMPACT_SCALE) if view.params != null else 1.0
+	var show_speed := view.params == null or view.params.get_value(ParamIds.FX_SPEED_INDICATOR) >= 0.5
+	for fx in view.fx.impacts:
+		var color := Color("ffffff").lerp(Color("ff7a3c"), fx.weight)
+		if fx.serve_kind == "float":
+			color = Color("ffe27a")
+		var center := view.to_screen(fx.position)
+		var p := ImpactFx.impact_progress(fx, now)
+		if p >= 0.0:
+			var radius := (0.25 + 0.55 * fx.weight) * scale * k * (0.25 + p)
+			draw_arc(center, radius, 0.0, TAU, 28, Color(color, 1.0 - p), 3.0, true)
+			if fx.serve_kind == "smash":
+				draw_arc(center, radius * 0.6, 0.0, TAU, 24, Color(color, 1.0 - p), 2.0, true)
+			var sparks := 6 + int(8.0 * fx.weight)
+			for i in sparks:
+				var angle := TAU * float(i) / float(sparks) + fx.direction.angle()
+				var dir := Vector2(cos(angle), -sin(angle))
+				draw_line(center + dir * radius * 0.7, center + dir * radius * (1.0 + 0.5 * fx.weight), Color(color, 1.0 - p), 2.0)
+		var age := now - fx.born
+		if show_speed and fx.action != "" and fx.action != "set" and fx.action != "receive" and age >= 0.0 and age <= ImpactFx.SPEED_LABEL_LIFE_S:
+			var fade := 1.0 - age / ImpactFx.SPEED_LABEL_LIFE_S
+			draw_string(view.font, center + Vector2(18, -44 - 14 * age), "%d km/h" % roundi(fx.speed * ImpactFx.MS_TO_KMH),
+				HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(color, fade))
 
 
 func _draw_dotted(path: PackedVector2Array, color: Color, radius: float) -> void:

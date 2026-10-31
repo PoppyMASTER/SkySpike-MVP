@@ -410,3 +410,44 @@ func test_ai_serves_on_the_ground_or_in_the_air_with_the_same_mechanisms() -> vo
 				break
 		assert_true(not fault, "graine %d : service IA sans faute" % seed_value)
 	assert_true(kinds.has("ground") and (kinds.has("float") or kinds.has("smash")), "l'IA varie ses services : %s" % kinds)
+
+
+func test_preview_marks_apex_and_the_reachable_band_without_promising_contact() -> void:
+	var sim := _sim()
+	_to_hold(sim)
+	sim.tick(_intents(sim, _press()))
+	for i in 160:
+		sim.tick(_intents(sim, _hold()))
+	var pv := sim.state().serve_preview
+	assert_true(pv != null, "prévision en charge")
+	if pv == null:
+		return
+	var top := 0.0
+	for pt in pv.toss_path:
+		top = maxf(top, pt.y)
+	assert_near(pv.apex_point.y, top, 0.15, "sommet repéré")
+	assert_true(pv.reach_path.size() > 2, "une bande de frappe potentielle existe")
+	for pt in pv.reach_path:
+		assert_true(pt.y >= pv.reach_low - 1e-6 and pt.y <= pv.reach_high + 1e-6, "points de la bande dans les hauteurs atteignables")
+	assert_true(pv.reach_high > pv.reach_low, "bande non vide")
+
+
+func test_preview_disappears_after_the_configured_delay_and_display_settings_do_not_change_the_match() -> void:
+	var a := _sim(3)
+	var b := _sim(3)
+	b.params.set_value(ParamIds.PREVIEW_OPACITY, 0.2)
+	b.params.set_value(ParamIds.PREVIEW_HUE, 0.9)
+	b.params.set_value(ParamIds.PREVIEW_VISIBLE, 0.0)
+	a.params.set_value(ParamIds.PREVIEW_AFTER_TOSS_S, 0.5)
+	_to_hold(a)
+	_to_hold(b)
+	a.tick(_intents(a, _press()))
+	b.tick(_intents(b, _press()))
+	a.tick(_intents(a, PlayerIntent.make()))
+	b.tick(_intents(b, PlayerIntent.make()))
+	assert_true(a.state().serve_preview != null, "juste après le lancer : prévision encore affichée")
+	for i in 80:   # 0,67 s
+		a.tick(_intents(a, PlayerIntent.make()))
+		b.tick(_intents(b, PlayerIntent.make()))
+	assert_true(a.state().serve_preview == null, "après preview_after_toss_s : la prévision disparaît")
+	assert_eq(a.state().fingerprint(), b.state().fingerprint(), "les réglages d'affichage ne changent pas la simulation")

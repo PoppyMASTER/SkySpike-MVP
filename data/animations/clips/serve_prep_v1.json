@@ -1,0 +1,55 @@
+{
+ "schema_version": 1,
+ "id": "serve_prep_v1",
+ "action": "serve_prep",
+ "duration_s": 1.0,
+ "loop": false,
+ "time_domain": "charge",
+ "pose_mode": "absolute",
+ "default_interpolation": "smooth",
+ "move_legs": "run",
+ "blend_in_s": 0.08,
+ "events": [],
+ "keyframes": [
+  {
+   "t": 0.0,
+   "pose": {
+    "thigh_l": -0.1396,
+    "shin_l": 0.2443,
+    "thigh_r": -0.1047,
+    "shin_r": 0.2094,
+    "upper_arm_l": -1.0472,
+    "forearm_l": -0.9599,
+    "hand_l": 0.0,
+    "upper_arm_r": 0.1745,
+    "forearm_r": -0.3491,
+    "hand_r": 0.0,
+    "torso": 0.0698,
+    "neck": -0.0349,
+    "head": -0.1047,
+    "foot_l": -0.1047,
+    "foot_r": -0.1047
+   }
+  },
+  {
+   "t": 1.0,
+   "pose": {
+    "thigh_l": -0.62,
+    "shin_l": 0.95,
+    "thigh_r": -0.55,
+    "shin_r": 0.88,
+    "upper_arm_l": -0.55,
+    "forearm_l": -0.75,
+    "hand_l": 0.0,
+    "upper_arm_r": 0.5,
+    "forearm_r": -0.5,
+    "hand_r": 0.0,
+    "torso": 0.32,
+    "neck": -0.12,
+    "head": -0.2,
+    "foot_l": -0.3,
+    "foot_r": -0.3
+   }
+  }
+ ]
+}

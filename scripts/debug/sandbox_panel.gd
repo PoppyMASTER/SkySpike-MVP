@@ -17,6 +17,7 @@ const GROUP_TITLES: Dictionary = {
 	"rules": "Règles",
 	"ai": "IA",
 	"conversion": "Stats → physique",
+	"display": "Affichage",
 }
 const EXPORT_DIR := "user://exports"
 

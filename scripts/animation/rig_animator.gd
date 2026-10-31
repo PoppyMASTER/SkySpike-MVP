@@ -44,6 +44,10 @@ func evaluate(now: PlayerSnapshot, before: PlayerSnapshot, alpha: float, tick: i
 		var legs_clip := library.clip_for(anim_set, clip.air_legs)
 		var legs_t := _clip_time(legs_clip, "", now, state_time, game_time, pos_x, vy, anim_speed)
 		target = Pose.with_bones_from(target, legs_clip.sample(legs_t), RigDef.LEG_BONES)
+	if now.grounded and clip.move_legs != "" and absf(now.velocity.x) > RUN_SPEED_THRESHOLD:
+		var run_clip := library.clip_for(anim_set, clip.move_legs)   # jambes de course : les pieds ne glissent pas
+		var run_t := _clip_time(run_clip, "", now, state_time, game_time, pos_x, vy, anim_speed)
+		target = Pose.with_bones_from(target, run_clip.sample(run_t), RigDef.LEG_BONES)
 	var frame := AnimFrame.new()
 	frame.clip_id = clip.id
 	frame.action = clip.action
@@ -86,10 +90,12 @@ func _choose(s: PlayerSnapshot) -> Dictionary:
 			return {"action": "feint", "hold": ""}
 		Enums.ActionState.SERVE_HIT:
 			return {"action": "serve", "hold": ""}
-		Enums.ActionState.SERVE_HOLD:
-			return {"action": "serve", "hold": "hold"}
-		Enums.ActionState.SERVE_TOSS, Enums.ActionState.SERVE_JUMP:
-			return {"action": "serve", "hold": "toss"}
+		Enums.ActionState.SERVE_HOLD:   # attente avec ballon, puis préparation (accroupi selon la charge)
+			return {"action": "serve_prep", "hold": ""}
+		Enums.ActionState.SERVE_TOSS:   # lancer : le bras monte, l'autre s'arme
+			return {"action": "serve_toss", "hold": ""}
+		Enums.ActionState.SERVE_JUMP:   # en l'air, bras armé en attendant la frappe
+			return {"action": "serve_toss", "hold": "cock"}
 		Enums.ActionState.BLOCK_READY:
 			return {"action": "block", "hold": "ready"}
 		Enums.ActionState.BLOCK_AIR:
@@ -116,6 +122,8 @@ func _clip_time(clip: AnimationClip, hold: String, s: PlayerSnapshot, state_time
 	if hold != "":
 		return clip.marker(hold, 0.0)
 	match clip.time_domain:
+		"charge":
+			return clampf(s.serve_charge, 0.0, 1.0) * clip.duration_s
 		"loop_time":
 			return game_time * speed
 		"distance":

@@ -1,0 +1,87 @@
+{
+ "schema_version": 1,
+ "id": "serve_toss_v1",
+ "action": "serve_toss",
+ "duration_s": 0.5,
+ "loop": false,
+ "time_domain": "seconds",
+ "pose_mode": "absolute",
+ "default_interpolation": "smooth",
+ "move_legs": "run",
+ "air_legs": "jump",
+ "blend_in_s": 0.05,
+ "events": [
+  {
+   "t": 0.0,
+   "type": "visual_marker",
+   "name": "release"
+  },
+  {
+   "t": 0.5,
+   "type": "visual_marker",
+   "name": "cock"
+  }
+ ],
+ "keyframes": [
+  {
+   "t": 0.0,
+   "pose": {
+    "thigh_l": -0.62,
+    "shin_l": 0.95,
+    "thigh_r": -0.55,
+    "shin_r": 0.88,
+    "upper_arm_l": -0.55,
+    "forearm_l": -0.75,
+    "hand_l": 0.0,
+    "upper_arm_r": 0.5,
+    "forearm_r": -0.5,
+    "hand_r": 0.0,
+    "torso": 0.32,
+    "neck": -0.12,
+    "head": -0.2,
+    "foot_l": -0.3,
+    "foot_r": -0.3
+   }
+  },
+  {
+   "t": 0.18,
+   "pose": {
+    "thigh_l": -0.12,
+    "shin_l": 0.2,
+    "thigh_r": -0.1047,
+    "shin_r": 0.2094,
+    "upper_arm_l": -2.4,
+    "forearm_l": -0.3,
+    "hand_l": 0.0,
+    "upper_arm_r": 0.1745,
+    "forearm_r": -0.3491,
+    "hand_r": 0.0,
+    "torso": -0.05,
+    "neck": -0.0349,
+    "head": -0.1047,
+    "foot_l": -0.1047,
+    "foot_r": -0.1047
+   }
+  },
+  {
+   "t": 0.5,
+   "pose": {
+    "thigh_l": -0.2094,
+    "shin_l": 0.3491,
+    "thigh_r": -0.1745,
+    "shin_r": 0.3142,
+    "upper_arm_l": -2.8798,
+    "forearm_l": -0.0873,
+    "hand_l": 0.0,
+    "upper_arm_r": 2.2689,
+    "forearm_r": -1.9199,
+    "hand_r": 0.0,
+    "torso": -0.1745,
+    "neck": -0.0698,
+    "head": -0.2094,
+    "foot_l": -0.1396,
+    "foot_r": -0.1396
+   }
+  }
+ ]
+}

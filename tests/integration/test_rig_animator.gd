@@ -64,8 +64,8 @@ func test_every_simulation_state_maps_to_a_clip() -> void:
 		Enums.ActionState.LOCKED: "idle_v1", Enums.ActionState.FREE: "idle_v1", Enums.ActionState.RECEIVE: "receive_v1",
 		Enums.ActionState.SET: "set_v1", Enums.ActionState.BLOCK_READY: "block_v1", Enums.ActionState.AIR: "jump_v1",
 		Enums.ActionState.SPIKE: "spike_v1", Enums.ActionState.FEINT: "feint_v1", Enums.ActionState.BLOCK_AIR: "block_v1",
-		Enums.ActionState.RECOVER: "land_v1", Enums.ActionState.SERVE_HOLD: "serve_v1", Enums.ActionState.SERVE_TOSS: "serve_v1",
-		Enums.ActionState.SERVE_JUMP: "serve_v1", Enums.ActionState.SERVE_HIT: "serve_v1",
+		Enums.ActionState.RECOVER: "land_v1", Enums.ActionState.SERVE_HOLD: "serve_prep_v1", Enums.ActionState.SERVE_TOSS: "serve_toss_v1",
+		Enums.ActionState.SERVE_JUMP: "serve_toss_v1", Enums.ActionState.SERVE_HIT: "serve_v1",
 	}
 	for state: int in expected:
 		var grounded: bool = not [Enums.ActionState.AIR, Enums.ActionState.SPIKE, Enums.ActionState.FEINT, Enums.ActionState.BLOCK_AIR, Enums.ActionState.SERVE_JUMP].has(state)
@@ -107,12 +107,11 @@ func test_landing_clip_is_stretched_over_the_simulated_recovery_time() -> void:
 
 
 func test_holds_use_clip_markers() -> void:
-	var clip := _lib.get_clip("serve_v1") if _lib != null else null
 	var a := _animator()
 	var hold := _eval(a, _snap(Enums.ActionState.SERVE_HOLD))
-	assert_near(hold.clip_time, _lib.get_clip("serve_v1").marker("hold", -1.0), 1e-6, "service tenu : repère « hold »")
-	var toss := _eval(_animator(), _snap(Enums.ActionState.SERVE_TOSS, 0.2))
-	assert_near(toss.clip_time, _lib.get_clip("serve_v1").marker("toss", -1.0), 1e-6, "ballon lancé : repère « toss »")
+	assert_near(hold.clip_time, 0.0, 1e-6, "service tenu sans charge : début de la préparation")
+	var jumped := _eval(_animator(), _snap(Enums.ActionState.SERVE_JUMP, 0.2, 0.1, 0.2, false))
+	assert_near(jumped.clip_time, _lib.get_clip("serve_toss_v1").marker("cock", -1.0), 1e-6, "saut de service : bras armé (repère « cock »)")
 	var ready := _eval(_animator(), _snap(Enums.ActionState.BLOCK_READY, 0.3))
 	assert_near(ready.clip_time, 0.0, 1e-6, "contre prêt : pose d'attente figée")
 
@@ -174,3 +173,22 @@ func test_rendering_never_changes_the_simulation() -> void:
 			animators[i].evaluate(state.players[i], before.players[i] if before != null else null, (t % 7) / 7.0, state.tick, state.tick_seconds, 0.3 + (t % 5))
 		before = state
 	assert_eq(drawn.state().fingerprint(), plain.state().fingerprint(), "avec ou sans rendu : même état de simulation")
+
+
+func test_serve_prep_follows_the_charge() -> void:
+	var low := _snap(Enums.ActionState.SERVE_HOLD)
+	var full := _snap(Enums.ActionState.SERVE_HOLD)
+	full.serve_charge = 1.0
+	var a := _eval(_animator(), low)
+	var b := _eval(_animator(), full)
+	assert_true(b.clip_time > a.clip_time + 0.9, "plus la charge est grande, plus le serveur s'accroupit")
+	assert_true(float(b.pose["thigh_l"]) < float(a.pose["thigh_l"]) - 0.3, "cuisses fléchies à pleine charge")
+
+
+func test_server_runs_legs_while_moving_on_the_ground() -> void:
+	var still := _eval(_animator(), _snap(Enums.ActionState.SERVE_TOSS, 0.3))
+	var moving := _animator().evaluate(_snap(Enums.ActionState.SERVE_TOSS, 0.3, 0.1, 0.2, true, Vector2(3, 0), 1.0), null, 1.0, 10, 0.01)
+	var run_clip := _lib.get_clip("run_v1")
+	var expected := run_clip.sample(fposmod(1.0 / run_clip.stride_m, 1.0) * run_clip.duration_s)
+	assert_near(float(moving.pose["thigh_l"]), float(expected["thigh_l"]), 1e-5, "les jambes suivent le cycle de course (pas de glissement)")
+	assert_near(float(moving.pose["upper_arm_l"]), float(still.pose["upper_arm_l"]), 1e-5, "les bras gardent le geste de service")
