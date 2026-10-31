@@ -3,9 +3,9 @@
 Sandbox de volleyball 2D 3 contre 3 (vue de profil), sous **Godot 4.7.2 / GDScript**.
 Projet neuf, distinct de l'ancien SkySpike (archivé : dépôt `PoppyMASTER/Spike`, commit `5c3b1b7`).
 
-**État : jalon J2 (physique).** Un joueur (silhouette provisoire) court, saute, reçoit et smashe dans un terrain
-avec filet à collisions balayées ; un ballon d'entraînement est relancé à chaque atterrissage.
-Les six joueurs, le rallye et le score arrivent au J3.
+**État : jalon J3 (gameplay 3v3).** Six silhouettes provisoires jouent un match complet de 15 points :
+service, réception, passe, smash, feinte, contre, arbitre et score. Vous pilotez un joueur bleu (attaquant,
+passeur ou défenseur, au choix dans F1) ; les cinq autres sont menés par l'IA. L'animation articulée arrive au J4.
 
 ## Lancer
 
@@ -17,8 +17,10 @@ godot --headless --path . -s tests/run_tests.gd -- determinism   # filtre par no
 ```
 
 En jeu (touches provisoires) : **← → / Q D** bouger · **Espace** sauter, puis **Espace** en l'air = smash ·
-**J** réception (au sol). Manette : stick gauche, **A** saut/smash, **X** réception.
-Debug : **F1** panneau sandbox · **F2** zones de contact · **P** pause · **N** un tick · **R** relancer.
+**J** réception (au sol), contre (au filet) ou feinte (en l'air) · **K** passe · **L** service.
+Manette : stick gauche, **A** saut/smash, **X** réception/contre/feinte, **B** passe, **Y** service.
+Debug : **F1** panneau sandbox (joueur contrôlé, visée assistée/manuelle) · **F2** zones de contact · **P** pause · **N** un tick · **R** relancer.
+Outils : `-- --sim N` joue N matchs IA contre IA et résume ; `-- --capture DOSSIER` enregistre des captures.
 
 ## Où lire quoi
 

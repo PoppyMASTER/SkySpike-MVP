@@ -1,8 +1,8 @@
 extends TestCase
 ## Même graine + mêmes paramètres → même résultat logique, quel que soit le découpage
-## du temps réel (FPS de rendu) et le ralenti. Critère d'acceptation 11 du CDC (J1 : ballon seul).
+## du temps réel (FPS de rendu) et le ralenti. Critère d'acceptation 11 du CDC. Depuis J3 : match complet 3v3, six joueurs pilotés par l'IA.
 
-const TARGET_TICKS := 2400   # 20 s de jeu à 120 ticks/s
+const TARGET_TICKS := 4800   # 40 s de jeu à 120 ticks/s
 
 
 ## Fait tourner une simulation jusqu'à TARGET_TICKS en découpant le temps réel selon `next_delta`.
@@ -12,7 +12,10 @@ func _run(seed_value: int, next_delta: Callable, time_scale := 1.0) -> Dictionar
 	clock.max_ticks_per_frame = 1000
 	clock.max_frame_s = 1.0
 	clock.time_scale = time_scale
-	var sim := MatchSim.new(params, seed_value, clock.dt)
+	var lineup := MatchConfig.default_lineup(SimHelpers.data().characters)
+	var sim := MatchSim.new(params, seed_value, clock.dt, lineup, -1)
+	var ai := AiDirector.new(params, seed_value, clock.dt, -1)
+	ai.set_lineup(lineup)
 	var events := PackedStringArray()
 	var frame := 0
 	while sim.tick_count < TARGET_TICKS:
@@ -21,7 +24,7 @@ func _run(seed_value: int, next_delta: Callable, time_scale := 1.0) -> Dictionar
 		for i in steps:
 			if sim.tick_count >= TARGET_TICKS:
 				break
-			for e: MatchEvent in sim.tick():
+			for e: MatchEvent in sim.tick(ai.intents(sim.state())):
 				events.append(e.to_text())
 	return {"state": sim.state().fingerprint(), "events": "\n".join(events), "frames": frame}
 
@@ -38,7 +41,7 @@ func test_same_result_at_30_60_144_fps_and_with_jitter() -> void:
 	assert_eq(jitter.state, at_60.state, "état final identique avec des images irrégulières")
 	assert_eq(at_30.events, at_60.events, "journal d'événements identique")
 	assert_eq(jitter.events.hash(), at_60.events.hash(), "empreinte du journal identique")
-	assert_true(at_60.events.count("BALL_LANDED") >= 5, "l'exercice produit bien plusieurs atterrissages")
+	assert_true(at_60.events.count("POINT_AWARDED") >= 3, "l'exercice produit plusieurs points")
 
 
 func test_slow_motion_does_not_change_the_result() -> void:

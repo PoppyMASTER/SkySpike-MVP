@@ -12,7 +12,10 @@ const GROUP_TITLES: Dictionary = {
 	"court": "Terrain",
 	"player": "Joueur",
 	"contact": "Contacts",
-	"drill": "Démo J1",
+	"assist": "Visée",
+	"block": "Contre",
+	"rules": "Règles",
+	"ai": "IA",
 	"conversion": "Stats → physique",
 }
 const EXPORT_DIR := "user://exports"
@@ -92,6 +95,18 @@ func _build_controls() -> VBoxContainer:
 	for scale: float in [0.25, 0.5, 1.0]:
 		speeds.add_child(_button("×%s" % scale, func() -> void:
 			runner.data.params.set_value(ParamIds.TIME_SCALE, scale)))
+	box.add_child(_heading("Joueur contrôlé (au prochain lancement)"))
+	var slot_list := OptionButton.new()
+	for label in ["Attaquant bleu", "Passeur bleu", "Défenseur bleu", "Aucun (IA contre IA)"]:
+		slot_list.add_item(label)
+	slot_list.selected = runner.human_slot if runner.human_slot >= 0 else 3
+	slot_list.item_selected.connect(func(index: int) -> void:
+		runner.human_slot = index if index < 3 else -1)
+	box.add_child(slot_list)
+	var aim_row := HBoxContainer.new()
+	box.add_child(aim_row)
+	aim_row.add_child(_button("Visée assistée", func() -> void: runner.data.params.set_value(ParamIds.AIM_MODE, 1.0)))
+	aim_row.add_child(_button("Visée manuelle", func() -> void: runner.data.params.set_value(ParamIds.AIM_MODE, 0.0)))
 	box.add_child(_heading("Graine"))
 	var seed_row := HBoxContainer.new()
 	box.add_child(seed_row)

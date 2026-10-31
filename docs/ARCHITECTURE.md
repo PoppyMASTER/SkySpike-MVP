@@ -16,7 +16,7 @@ AiController (lit MatchState) ─────┘                                
 JSON ─► chargeurs (data/) ─► objets typés          ParamStore (unités, bornes, défauts) ─► MatchSim, rendu, debug
 ```
 
-État au J2 : `MatchSim` contient le ballon (exercice de lancer), le filet et un joueur humain ; IA et animation arrivent aux J3–J4.
+État au J3 : `MatchSim` contient le ballon, le filet, six joueurs, l'arbitre (`Referee`), les contacts (`ContactResolver`) et le contre (`BlockResolver`) ; l'IA (`AiDirector`, couche `ai`) lit `MatchState` et produit des `PlayerIntent`. L'animation arrive au J4.
 
 Ordre d'un tick : ballon (intégration, collision balayée du filet) → joueurs (mouvement, actions, contacts) → sol (atterrissage, relance).
 Entrées : `InputMapper.poll` (chaque image) → `InputLatch` → un `PlayerIntent` consommé par tick (les appuis ne sont ni perdus ni doublés).
@@ -34,7 +34,7 @@ Une couche ne peut utiliser que les couches listées. Vérifié automatiquement
 | `simulation` | Corps physiques purs (ballon ; joueurs au J2), intégration, collisions | core, characters |
 | `gameplay` | `MatchSim` (seul autoritaire), état, événements, règles (J3) | core, characters, simulation |
 | `input` (J2) | Périphériques → `PlayerIntent` | core, gameplay |
-| `ai` (J3) | `MatchState` → `PlayerIntent` | core, characters, simulation, gameplay |
+| `ai` | `MatchState` → `PlayerIntent` | core, characters, simulation, gameplay |
 | `animation` (J4) | Clips, lecteur, IK, morphologie du rig | core, data, characters, gameplay |
 | `rendering` | Dessin, interpolation, caméra, effets | core, characters, simulation, gameplay, animation |
 | `app` | Assemblage : `GameData`, `MatchRunner`, `main.gd` | tout sauf debug |

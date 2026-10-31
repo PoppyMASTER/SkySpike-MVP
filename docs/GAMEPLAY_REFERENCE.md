@@ -64,3 +64,14 @@ multiplie les tolérances et corrige la direction dans une limite d'angle régla
 
 Écart = qualité de bloc − qualité d'attaque + biais : au-dessus de `seuil_contre` contre gagnant, entre les
 seuils bloc partiel, en dessous le ballon passe. Chaque terme est publié dans l'événement `BLOCK_RESOLVED`.
+
+## Implémenté au J3 [Calibration pour toutes les valeurs]
+
+- **Match** : six joueurs (slots 0-2 bleus à gauche, 3-5 rouges à droite), un set de 15 points, 2 d'écart. Phases READY → SERVE_PREP → BALL_LIVE → POINT_AWARDED → RESET.
+- **Postes** : attaquant, passeur, défenseur ; positions de départ `home_*_x`. Le service tourne attaquant → passeur → défenseur à chaque changement de service.
+- **Arbitre** : 3 touches maximum par équipe, double touche = faute, 4e touche = faute, touche de bloc non comptée (et le contreur peut rejouer), ballon au sol hors terrain = faute de la dernière équipe qui l'a touché, service qui retombe sans avoir été frappé = faute de service.
+- **Touches** : flèches / Q D déplacement, Espace saut puis smash, J réception (sol) ou contre (au filet) ou feinte (en l'air), K passe, L service ; manette : stick, A, X, B, Y.
+- **Visée** : assistée (défaut) ou manuelle (`aim_mode`, panneau F1). En assisté, l'angle est corrigé vers une cible, plafonné.
+- **Contre** : attaque = vitesse et qualité du smash ; défense = stat × (timing, alignement, marge) ; issue = bloc écrasé, touche ou passage.
+- **IA** : délai de réaction, erreurs de prédiction et de timing, plan selon le nombre de touches (réception, passe, attaque), tentative de contre, retour à la formation.
+- **Mesure (12 matchs IA contre IA)** : tous terminés, ~27 points par match, ~3,4 contacts par point, ~270 s de jeu par match. Les valeurs sont des calibrations, pas des décisions.

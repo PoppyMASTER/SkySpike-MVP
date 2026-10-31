@@ -4,8 +4,15 @@ extends RefCounted
 
 enum Role { ATTACKER, SETTER, DEFENDER }
 
-## États d'action d'un joueur (J2 : sous-ensemble de la machine complète du J3).
-enum ActionState { FREE, RECEIVE, AIR, SPIKE, RECOVER }
+## États d'action d'un joueur (tableau de la Phase 0, section F). AIR = AIR_ATTACK ; LAND est
+## fusionné avec RECOVER (durée d'atterrissage réglable).
+enum ActionState {
+	LOCKED, FREE, RECEIVE, SET, BLOCK_READY, AIR, SPIKE, FEINT, BLOCK_AIR, RECOVER,
+	SERVE_HOLD, SERVE_TOSS, SERVE_JUMP, SERVE_HIT,
+}
+
+## Phases du match. MATCH_OVER s'ajoute au cycle de la Phase 0 (fin de la partie).
+enum Phase { READY, SERVE_PREP, BALL_LIVE, POINT_AWARDED, RESET, MATCH_OVER }
 
 const ROLE_NAMES: Dictionary = {
 	Role.ATTACKER: "attacker",
@@ -28,3 +35,7 @@ static func role_to_string(role: int) -> String:
 
 static func action_to_string(state: int) -> String:
 	return ActionState.keys()[state] if state >= 0 and state < ActionState.size() else "UNKNOWN"
+
+
+static func phase_to_string(phase: int) -> String:
+	return Phase.keys()[phase] if phase >= 0 and phase < Phase.size() else "UNKNOWN"

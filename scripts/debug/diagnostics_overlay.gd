@@ -52,6 +52,6 @@ func _process(delta: float) -> void:
 	var events := runner.event_log
 	for i in range(maxi(0, events.size() - EVENTS_SHOWN), events.size()):
 		lines.append("  " + events[i].to_text())
-	lines.append("Jouer : ←/→ ou Q/D bouger · Espace sauter, puis Espace = smash · J réception")
+	lines.append("Jouer : ←/→ ou Q/D bouger · Espace saut/smash · J réception/contre/feinte · K passe · L service")
 	lines.append("F1 panneau · F2 zones · P pause · N un tick · R relancer")
 	_label.text = "\n".join(lines)

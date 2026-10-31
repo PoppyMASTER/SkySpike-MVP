@@ -16,11 +16,11 @@ static func fresh_params() -> ParamStore:
 	return TestCase.real_params()
 
 
-static func make_sim(character_id := "std_attacker_01", seed_value := 1, tick_dt := 1.0 / 120.0, params: ParamStore = null) -> MatchSim:
+static func make_sim(character_id := "std_attacker_01", seed_value := 1, tick_dt := 1.0 / 120.0, params: ParamStore = null, human_slot := -1) -> MatchSim:
 	var lineup: Array[CharacterDefinition] = []
 	if character_id != "":
 		lineup.append(data().characters.get_character(character_id))
-	return MatchSim.new(params if params != null else fresh_params(), seed_value, tick_dt, lineup)
+	return MatchSim.new(params if params != null else fresh_params(), seed_value, tick_dt, lineup, human_slot)
 
 
 ## Avance `count` ticks avec la même intention ; renvoie tous les événements.

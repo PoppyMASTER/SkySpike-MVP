@@ -100,7 +100,9 @@ func _receive_after(wait: int) -> MatchEvent:
 
 
 func test_spike_needs_a_jump_and_only_once_per_jump() -> void:
-	var sim := SimHelpers.make_sim("hammer_01")
+	var params := SimHelpers.fresh_params()
+	params.set_value(ParamIds.AIM_MODE, 0.0)   # visée manuelle : l'angle ne dépend que du timing
+	var sim := SimHelpers.make_sim("hammer_01", 1, 1.0 / 120.0, params, 0)
 	SimHelpers.park_ball(sim)
 	var events := SimHelpers.one_tick(sim, PlayerIntent.make(0.0, true))
 	for i in 15:
@@ -127,7 +129,8 @@ func test_receive_is_ignored_in_the_air_and_during_recovery() -> void:
 	SimHelpers.park_ball(sim)
 	SimHelpers.one_tick(sim, PlayerIntent.make(0.0, true))
 	var events := SimHelpers.one_tick(sim, PlayerIntent.make(0.0, false, true))
-	assert_eq(SimHelpers.count_type(events, E.ACTION_STARTED), 0, "pas de réception en l'air")
+	var started := SimHelpers.first_of(events, E.ACTION_STARTED)
+	assert_true(started == null or started.details.action != "receive", "pas de réception en l'air (en l'air, la touche feinte)")
 
 
 func test_ball_cannot_tunnel_through_the_net_even_at_low_tick_rates() -> void:

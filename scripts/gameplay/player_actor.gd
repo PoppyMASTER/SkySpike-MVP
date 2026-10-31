@@ -1,58 +1,105 @@
 class_name PlayerActor
 extends RefCounted
-## Un joueur dans la simulation : corps physique + machine d'actions + contacts avec le ballon.
-## J2 : FREE, RECEIVE, AIR, SPIKE, RECOVER. Un appui engage l'action ; le contact n'a lieu que si
-## le ballon traverse la zone pendant la fenêtre active.
+## Un joueur dans la simulation : corps physique + machine d'actions (Phase 0, section F) + contacts.
+## Un appui engage l'action ; le contact n'a lieu que si le ballon traverse la zone pendant la
+## fenêtre active. L'acteur ne marque aucun point : il signale ses contacts dans `ctx.contacts`.
+
+const WINDOW_STATES := [Enums.ActionState.RECEIVE, Enums.ActionState.SET, Enums.ActionState.SPIKE,
+	Enums.ActionState.FEINT, Enums.ActionState.SERVE_HIT]
 
 var slot := 0
+var team := 0
 var character: CharacterDefinition
 var body := PlayerBody.new()
 var facing := 1
 var state: int = Enums.ActionState.FREE
 var state_time := 0.0
 
+var _kind: StringName = &""
 var _recover_len := 0.0
-var _spike_used := false
+var _air_used := false
+var _block_used := false
+var _jump_v0 := 1.0
+var _locked := false
+var _auto_x := 0.0
+var _serving := false
 var _axis := 0.0
-var _active_zone: int = PlayerSnapshot.Zone.NONE
+var _best_distance := INF
 
 
-func _init(player_slot: int, definition: CharacterDefinition, start_x: float, look_dir: int) -> void:
+func _init(player_slot: int, team_index: int, definition: CharacterDefinition, start_x: float, look_dir: int) -> void:
 	slot = player_slot
+	team = team_index
 	character = definition
 	facing = look_dir
 	body.position = Vector2(start_x, 0.0)
 
 
-## Un tick. `ball_from` = position du ballon au début du tick (le ballon a déjà été avancé).
+# ------------------------------------------------------------------ ordres de l'arbitre (MatchSim)
+## Immobilise le joueur : il rejoint `x` automatiquement et ignore ses entrées.
+func lock_to(x: float) -> void:
+	_locked = true
+	_serving = false
+	_auto_x = x
+
+
+func unlock() -> void:
+	_locked = false
+
+
+## Remet le joueur au sol en `x`, sans action en cours.
+func reset_to(x: float) -> void:
+	body.position = Vector2(x, 0.0)
+	body.velocity = Vector2.ZERO
+	body.grounded = true
+	_serving = false
+	_enter(Enums.ActionState.FREE)
+
+
+func begin_serve() -> void:
+	_locked = false
+	_serving = true
+	_enter(Enums.ActionState.SERVE_HOLD)
+
+
+## Position de la main qui tient le ballon avant le lancer.
+func serve_hold_position(p: ParamStore) -> Vector2:
+	return body.position + Vector2(facing * p.get_value(ParamIds.SERVE_ZONE_DX), p.get_value(ParamIds.SERVE_ZONE_DY) * 0.5)
+
+
+# ------------------------------------------------------------------ un tick
+## `ball_from` = position du ballon au début du tick (le ballon a déjà été avancé).
 func tick(intent: PlayerIntent, ctx: SimContext, ball_from: Vector2) -> void:
 	var p := ctx.params
 	state_time += ctx.dt
+	if _locked:
+		intent = PlayerIntent.make()
 	_axis = intent.move_axis
-	_start_actions(intent, ctx)
-	var in_action := state == Enums.ActionState.RECEIVE or state == Enums.ActionState.SPIKE
-	var max_speed := StatConversion.run_speed(character.stats, p)
-	if in_action:
-		max_speed *= p.get_value(ParamIds.ACTION_MOVE_FACTOR)
-	var near := ctx.court.net_half_thickness + p.get_value(ParamIds.PLAYER_HALF_WIDTH)
-	var far := ctx.court.half_length + ctx.court.out_margin
-	var x_min := -far if facing > 0 else near
-	var x_max := -near if facing > 0 else far
-	var landed := body.step(ctx.dt, intent.move_axis, max_speed, p.get_value(ParamIds.GROUND_ACCEL),
-		p.get_value(ParamIds.GROUND_DECEL), p.get_value(ParamIds.AIR_CONTROL),
-		p.get_value(ParamIds.PLAYER_GRAVITY), x_min, x_max)
+	_handle_input(intent, ctx)
+	var landed := _move(intent, ctx)
 	if landed:
 		ctx.emit(MatchEvent.Type.PLAYER_LANDED, {"slot": slot})
-		if state == Enums.ActionState.AIR or state == Enums.ActionState.SPIKE:
-			_enter(Enums.ActionState.RECOVER, p.get_value(ParamIds.LAND_RECOVER_S))
-	if state == Enums.ActionState.RECEIVE or state == Enums.ActionState.SPIKE:
+		_serving = false
+		_enter(Enums.ActionState.RECOVER, p.get_value(ParamIds.LAND_RECOVER_S))
+	if WINDOW_STATES.has(state):
 		_update_window(ctx, ball_from)
+	elif state == Enums.ActionState.BLOCK_AIR and not _block_used and not ctx.ball_held:
+		if BlockResolver.try_block(self, ctx, ball_from, _jump_v0):
+			_block_used = true
+			ctx.contacts.append({"slot": slot, "kind": "block", "block": true})
 	elif state == Enums.ActionState.RECOVER and state_time >= _recover_len:
 		_enter(Enums.ActionState.FREE if body.grounded else Enums.ActionState.AIR)
+	if _locked and body.grounded and state == Enums.ActionState.FREE:
+		_enter(Enums.ActionState.LOCKED)
+	elif not _locked and state == Enums.ActionState.LOCKED:
+		_enter(Enums.ActionState.FREE)
 
 
 func snapshot(p: ParamStore) -> PlayerSnapshot:
 	var s := PlayerSnapshot.new()
+	s.slot = slot
+	s.team = team
+	s.role = character.role
 	s.character_id = character.id
 	s.position = body.position
 	s.velocity = body.velocity
@@ -60,92 +107,180 @@ func snapshot(p: ParamStore) -> PlayerSnapshot:
 	s.grounded = body.grounded
 	s.action = state
 	s.action_time = state_time
-	s.receive_center = _zone_center(ParamIds.RECEIVE_ZONE_DX, ParamIds.RECEIVE_ZONE_DY, p)
-	s.receive_radius = p.get_value(ParamIds.RECEIVE_ZONE_RADIUS)
-	s.spike_center = _zone_center(ParamIds.SPIKE_ZONE_DX, ParamIds.SPIKE_ZONE_DY, p)
-	s.spike_radius = p.get_value(ParamIds.SPIKE_ZONE_RADIUS)
-	s.active_zone = _active_zone
+	var receive := ContactSpec.of(ContactSpec.RECEIVE, p)
+	var spike := ContactSpec.of(ContactSpec.SPIKE, p)
+	s.receive_center = receive.center(body.position, facing)
+	s.receive_radius = receive.radius
+	s.spike_center = spike.center(body.position, facing)
+	s.spike_radius = spike.radius
+	if WINDOW_STATES.has(state):
+		var spec := ContactSpec.of(_kind, p)
+		if state_time >= spec.t_on and state_time <= spec.t_off:
+			s.active_kind = String(_kind)
+			s.active_center = spec.center(body.position, facing)
+			s.active_radius = spec.radius
+	elif state == Enums.ActionState.BLOCK_AIR:
+		s.active_kind = "block"
+		s.active_center = body.position + Vector2(facing * p.get_value(ParamIds.BLOCK_ZONE_DX), p.get_value(ParamIds.BLOCK_ZONE_DY))
+		s.active_radius = p.get_value(ParamIds.BLOCK_ZONE_RADIUS)
 	return s
 
 
-func _start_actions(intent: PlayerIntent, ctx: SimContext) -> void:
+# ------------------------------------------------------------------ entrées et transitions
+func _handle_input(intent: PlayerIntent, ctx: SimContext) -> void:
+	var press := intent.first_press()
+	match state:
+		Enums.ActionState.FREE:
+			if press == &"jump":
+				_do_jump(ctx, Enums.ActionState.AIR)
+			elif press == &"set":
+				_begin_window(ctx, ContactSpec.SET, Enums.ActionState.SET)
+			elif press == &"receive":
+				if _near_net(ctx) and _ball_at_opponent(ctx):
+					_enter(Enums.ActionState.BLOCK_READY)
+				else:
+					_begin_window(ctx, ContactSpec.RECEIVE, Enums.ActionState.RECEIVE)
+		Enums.ActionState.BLOCK_READY:
+			if not intent.receive_held:
+				_enter(Enums.ActionState.FREE)
+			elif intent.jump_pressed:
+				_do_jump(ctx, Enums.ActionState.BLOCK_AIR)
+		Enums.ActionState.AIR:
+			if _air_used or body.grounded:
+				return
+			if press == &"jump":
+				_begin_window(ctx, ContactSpec.SPIKE, Enums.ActionState.SPIKE)
+			elif press == &"set":
+				_begin_window(ctx, ContactSpec.SET, Enums.ActionState.SET)
+			elif press == &"receive":
+				_begin_window(ctx, ContactSpec.FEINT, Enums.ActionState.FEINT)
+		Enums.ActionState.SERVE_HOLD:
+			if intent.serve_pressed:
+				ctx.ball_held = false
+				ctx.ball.position = serve_hold_position(ctx.params)
+				ctx.ball.velocity = Vector2(0.0, ctx.params.get_value(ParamIds.SERVE_TOSS_SPEED))
+				ctx.emit(MatchEvent.Type.SERVE_TOSSED, {"slot": slot})
+				_enter(Enums.ActionState.SERVE_TOSS)
+		Enums.ActionState.SERVE_TOSS:
+			if intent.serve_pressed:
+				_begin_window(ctx, ContactSpec.SERVE, Enums.ActionState.SERVE_HIT)
+			elif intent.jump_pressed:
+				_do_jump(ctx, Enums.ActionState.SERVE_JUMP)
+		Enums.ActionState.SERVE_JUMP:
+			if intent.serve_pressed:
+				_begin_window(ctx, ContactSpec.SERVE, Enums.ActionState.SERVE_HIT)
+
+
+func _do_jump(ctx: SimContext, new_state: int) -> void:
 	var p := ctx.params
-	if state == Enums.ActionState.FREE and body.grounded:
-		if intent.jump_pressed:
-			var apex := StatConversion.jump_apex(character.stats, p)
-			body.jump(sqrt(2.0 * p.get_value(ParamIds.PLAYER_GRAVITY) * apex))
-			_spike_used = false
-			_enter(Enums.ActionState.AIR)
-			ctx.emit(MatchEvent.Type.PLAYER_JUMPED, {"slot": slot})
-		elif intent.receive_pressed:
-			_enter(Enums.ActionState.RECEIVE)
-			ctx.emit(MatchEvent.Type.ACTION_STARTED, {"slot": slot, "action": "receive"})
-	elif state == Enums.ActionState.AIR and not body.grounded and intent.jump_pressed and not _spike_used:
-		_spike_used = true
-		_enter(Enums.ActionState.SPIKE)
-		ctx.emit(MatchEvent.Type.ACTION_STARTED, {"slot": slot, "action": "spike"})
+	var apex := StatConversion.jump_apex(character.stats, p)
+	_jump_v0 = sqrt(2.0 * p.get_value(ParamIds.PLAYER_GRAVITY) * apex)
+	body.jump(_jump_v0)
+	_air_used = false
+	_block_used = false
+	_enter(new_state)
+	ctx.emit(MatchEvent.Type.PLAYER_JUMPED, {"slot": slot})
+
+
+func _begin_window(ctx: SimContext, kind: StringName, new_state: int) -> void:
+	_kind = kind
+	_best_distance = INF
+	_enter(new_state)
+	ctx.emit(MatchEvent.Type.ACTION_STARTED, {"slot": slot, "action": String(kind)})
 
 
 func _enter(new_state: int, recover_len := 0.0) -> void:
 	state = new_state
 	state_time = 0.0
 	_recover_len = recover_len
-	_active_zone = PlayerSnapshot.Zone.NONE
 
 
+func _near_net(ctx: SimContext) -> bool:
+	return absf(body.position.x) < ctx.params.get_value(ParamIds.NET_ZONE)
+
+
+## « Ballon chez l'adversaire » : dans son camp, ou dernier toucheur adverse.
+func _ball_at_opponent(ctx: SimContext) -> bool:
+	return ctx.ball.position.x * facing > 0.0 or (ctx.rally.last_team >= 0 and ctx.rally.last_team != team)
+
+
+# ------------------------------------------------------------------ mouvement
+## Renvoie true si le joueur vient de toucher le sol.
+func _move(intent: PlayerIntent, ctx: SimContext) -> bool:
+	var p := ctx.params
+	var max_speed := StatConversion.run_speed(character.stats, p)
+	var axis := intent.move_axis
+	var air_grip: float = p.get_value(ParamIds.AIR_CONTROL)
+	match state:
+		Enums.ActionState.LOCKED:
+			var gap := _auto_x - body.position.x
+			if absf(gap) <= max_speed * ctx.dt:
+				body.position.x = _auto_x
+				body.velocity.x = 0.0
+				axis = 0.0
+			else:
+				axis = signf(gap)
+		Enums.ActionState.RECEIVE, Enums.ActionState.SET, Enums.ActionState.SPIKE, Enums.ActionState.FEINT, \
+		Enums.ActionState.SERVE_HIT, Enums.ActionState.RECOVER:
+			max_speed *= p.get_value(ParamIds.ACTION_MOVE_FACTOR)
+		Enums.ActionState.BLOCK_READY:
+			max_speed *= p.get_value(ParamIds.BLOCK_READY_MOVE_MULT)
+		Enums.ActionState.BLOCK_AIR:
+			air_grip *= p.get_value(ParamIds.BLOCK_AIR_CONTROL_MULT)
+		Enums.ActionState.SERVE_TOSS:
+			max_speed = 0.0
+	var near := ctx.court.net_half_thickness + p.get_value(ParamIds.PLAYER_HALF_WIDTH)
+	var far := ctx.court.half_length + ctx.court.out_margin
+	var x_min := -far if facing > 0 else near
+	var x_max := -near if facing > 0 else far
+	if _serving:   # le service se fait derrière la ligne de fond
+		var line := -facing * ctx.court.half_length
+		var back := -facing * (ctx.court.half_length + p.get_value(ParamIds.SERVE_LINE_DEPTH))
+		x_min = minf(line, back)
+		x_max = maxf(line, back)
+	return body.step(ctx.dt, axis, max_speed, p.get_value(ParamIds.GROUND_ACCEL), p.get_value(ParamIds.GROUND_DECEL),
+		air_grip, p.get_value(ParamIds.PLAYER_GRAVITY), x_min, x_max)
+
+
+# ------------------------------------------------------------------ fenêtres de contact
+## Le contact est validé au point d'approche maximale du ballon dans la zone : la distance au centre
+## mesurée à ce moment donne l'erreur de position (un ballon qui ne fait qu'effleurer le bord de la
+## zone donne une mauvaise qualité, un ballon qui passe au centre une bonne).
 func _update_window(ctx: SimContext, ball_from: Vector2) -> void:
-	var p := ctx.params
-	var is_receive := state == Enums.ActionState.RECEIVE
-	var t_on: float = p.get_value(ParamIds.RECEIVE_ON if is_receive else ParamIds.SPIKE_ON)
-	var t_off: float = p.get_value(ParamIds.RECEIVE_OFF if is_receive else ParamIds.SPIKE_OFF)
-	if state_time > t_off:
-		_end_action(ctx, true)
+	var spec := ContactSpec.of(_kind, ctx.params)
+	if state_time > spec.t_off:
+		if _best_distance < INF:
+			_commit(ctx, spec, _best_distance)   # la fenêtre se ferme avec le ballon dans la zone
+		else:
+			_end_action(ctx, true)
 		return
-	if state_time < t_on:
+	if state_time < spec.t_on or ctx.ball_held:
 		return
-	_active_zone = PlayerSnapshot.Zone.RECEIVE if is_receive else PlayerSnapshot.Zone.SPIKE
-	var center := _zone_center(ParamIds.RECEIVE_ZONE_DX if is_receive else ParamIds.SPIKE_ZONE_DX,
-		ParamIds.RECEIVE_ZONE_DY if is_receive else ParamIds.SPIKE_ZONE_DY, p)
-	var radius: float = p.get_value(ParamIds.RECEIVE_ZONE_RADIUS if is_receive else ParamIds.SPIKE_ZONE_RADIUS)
+	var center := spec.center(body.position, facing)
 	var distance := SweptCollision.point_segment_distance(center, ball_from, ctx.ball.position)
-	if distance <= radius:
-		_contact(ctx, is_receive, distance, radius)
-		_end_action(ctx, false)
+	if distance <= spec.radius:
+		_best_distance = minf(_best_distance, distance)
+		if SweptCollision.closest_fraction(center, ball_from, ctx.ball.position) < 1.0:
+			_commit(ctx, spec, distance)   # l'approche maximale a eu lieu pendant ce tick
+	elif _best_distance < INF:
+		_commit(ctx, spec, _best_distance)   # le ballon est ressorti de la zone
 
 
-func _contact(ctx: SimContext, is_receive: bool, distance: float, radius: float) -> void:
-	var p := ctx.params
-	var ideal: float = p.get_value(ParamIds.RECEIVE_IDEAL if is_receive else ParamIds.SPIKE_IDEAL)
-	var tolerance: float = p.get_value(ParamIds.RECEIVE_TIME_TOL if is_receive else ParamIds.SPIKE_TIME_TOL)
-	var e_t := ContactModel.time_error(state_time, ideal, tolerance)
-	var e_s := ContactModel.space_error(distance, radius)
-	var q := ContactModel.quality(e_t, e_s, p.get_value(ParamIds.CONTACT_W_TIME), p.get_value(ParamIds.CONTACT_W_SPACE))
-	var top_speed: float = p.get_value(ParamIds.RECEIVE_SPEED) if is_receive else StatConversion.spike_speed(character.stats, p)
-	var sigma: float = StatConversion.receive_angle_noise(character.stats, p) if is_receive \
-		else StatConversion.spike_angle_noise(character.stats, p)
-	var action_name := "receive" if is_receive else "spike"
-	var noise := ctx.rng.gaussian_tagged(MatchRng.STREAM_CONTACTS, "%s_angle" % action_name, sigma)
-	var speed_value := ContactModel.speed(top_speed, q, p.get_value(ParamIds.QUALITY_SPEED_FLOOR))
-	var angle := ContactModel.exit_angle(p.get_value(ParamIds.RECEIVE_ANGLE if is_receive else ParamIds.SPIKE_ANGLE),
-		e_t, p.get_value(ParamIds.TIMING_ANGLE_SHIFT), _axis * facing, p.get_value(ParamIds.AIM_RANGE), noise)
-	ctx.ball.velocity = ContactModel.exit_velocity(speed_value, angle, facing)
-	ctx.emit(MatchEvent.Type.CONTACT, {
-		"slot": slot, "action": action_name,
-		"q": snappedf(q, 0.001), "e_t": snappedf(e_t, 0.001), "e_s": snappedf(e_s, 0.001),
-		"speed": snappedf(speed_value, 0.001), "angle": snappedf(angle, 0.0001),
-	})
+func _commit(ctx: SimContext, spec: ContactSpec, distance: float) -> void:
+	var details := ContactResolver.resolve(spec, self, ctx, state_time, distance, _axis * facing)
+	ctx.emit(MatchEvent.Type.CONTACT, details)
+	ctx.contacts.append({"slot": slot, "kind": String(_kind), "block": false})
+	_end_action(ctx, false)
 
 
-## Fin de fenêtre (touchée ou ratée) : retour au sol avec récupération, ou en l'air sans second smash.
+## Fin de fenêtre (touchée ou ratée) : sol → récupération ; air → retour à l'état aérien.
 func _end_action(ctx: SimContext, missed: bool) -> void:
 	if missed:
-		ctx.emit(MatchEvent.Type.ACTION_MISSED, {
-			"slot": slot, "action": "receive" if state == Enums.ActionState.RECEIVE else "spike"})
+		ctx.emit(MatchEvent.Type.ACTION_MISSED, {"slot": slot, "action": String(_kind)})
+	if state == Enums.ActionState.SERVE_HIT:
+		_serving = false
 	if body.grounded:
 		_enter(Enums.ActionState.RECOVER, ctx.params.get_value(ParamIds.RECOVER_S))
 	else:
+		_air_used = true
 		_enter(Enums.ActionState.AIR)
-
-
-func _zone_center(dx_id: StringName, dy_id: StringName, p: ParamStore) -> Vector2:
-	return body.position + Vector2(facing * p.get_value(dx_id), p.get_value(dy_id))
