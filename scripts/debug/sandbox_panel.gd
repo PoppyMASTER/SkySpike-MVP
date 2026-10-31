@@ -18,6 +18,7 @@ const GROUP_TITLES: Dictionary = {
 	"ai": "IA",
 	"conversion": "Stats → physique",
 	"display": "Affichage",
+	"audio": "Son",
 }
 const EXPORT_DIR := "user://exports"
 

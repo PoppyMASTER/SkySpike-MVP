@@ -102,6 +102,25 @@ pâle, anneau d'atterrissage (vert dans les lignes, orange dehors, croix rouge a
 **Étape B** : la prévision montre départ, montée, sommet, descente et bande de frappe potentielle (réglages `preview_*`). Le serveur a des poses dédiées : attente, préparation (accroupi selon la charge), lancer, bras armé en l'air, frappe, suivi, atterrissage ; jambes de course quand il bouge.
 **Étape C** : impact, traînée selon la vitesse, indicateur de vitesse (km/h), secousse de caméra mesurée ; réglages `fx_*` (groupe Affichage). Tout est visuel : aucun effet sur la physique.
 
+**Effets et son des services (J4.1 SJ2)** — présentation uniquement, aucun effet sur la simulation. Le style suit le type RÉEL au contact
+(`CONTACT.serve_kind`), jamais l'intention ; une frappe manquée ne produit ni effet ni son.
+Intensité (effets et son) : `I = clamp(vitesse / fx_speed_full_<type>) × (fx_quality_floor + (1 − fx_quality_floor) × q)`.
+Effets exceptionnels (éclair, lignes de vitesse, secousse de caméra) : smash seulement, si `q ≥ fx_min_quality` et
+`vitesse ≥ fx_min_speed_ratio × fx_speed_full_smash`. Un smash rapide mais imparfait garde un impact et une traînée puissants, sans ces effets.
+
+| | Sol | Flottant | Smash |
+| --- | --- | --- | --- |
+| Impact | anneau fin blanc / bleu clair, petit et bref | anneau cyan, éclats droits, sans halo | double anneau, étincelles jaune-orangé, éclair bref (exceptionnel) |
+| Traînée | ruban court et discret (`fx_trail_ground_s`) | ruban fin, ondulation PUREMENT GRAPHIQUE (`fx_float_wobble_*`) | ruban épais jaune-orangé (`fx_trail_smash_s`), lignes de vitesse (exceptionnel) |
+| km/h | désactivés (`fx_speed_label_ground`) | affichés | affichés |
+| Caméra | non | non | secousse ≤ 6 px, 0,15 s (exceptionnel, `fx_camera_strength`) |
+| Son | « pok » léger | « clac » sec | coup sourd puissant |
+
+Lisibilité : les effets sont dessinés SOUS le ballon, les anneaux s'ouvrent à distance du ballon, l'éclair reste translucide. La prévision est en
+pointillés (vert / rouge), la traînée est un ruban continu d'autres couleurs. Prévision pendant l'échange : `preview_rally_mode` (0 rien,
+1 repère seul, 2 trajectoire + repère), `preview_rally_opacity` ; le repère de retombée se resserre à l'approche du sol et n'indique jamais qui
+peut atteindre le ballon. Son : `audio_*` (groupe Son) ; voix plafonnées, contacts rapprochés fusionnés, limiteur −1 dBFS, ralenti suivi.
+
 ## Contre [Prévu J3]
 
 Écart = qualité de bloc − qualité d'attaque + biais : au-dessus de `seuil_contre` contre gagnant, entre les

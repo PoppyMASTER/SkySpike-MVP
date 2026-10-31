@@ -111,11 +111,13 @@ func show_states(previous: MatchState, current: MatchState, render_alpha: float)
 ## Transmet les événements d'un tick aux effets (appelé par MatchRunner).
 func on_events(events: Array[MatchEvent], state: MatchState) -> void:
 	if fx_enabled():
+		fx.params = params
 		fx.on_events(events, state)
 
 
+## Effets actifs : réglage « Effets : activés » (sans réglages d'affichage, pas d'effets).
 func fx_enabled() -> bool:
-	return params == null or params.get_value(ParamIds.FX_ENABLED) >= 0.5
+	return params != null and params.get_value(ParamIds.FX_ENABLED) >= 0.5
 
 
 func fx_time() -> float:
@@ -127,8 +129,9 @@ func _update_fx() -> void:
 		fx.clear()
 		camera_px = Vector2.ZERO
 		return
-	fx.on_state(current_state, params.get_value(ParamIds.FX_TRAIL_S) if params != null else 0.4)
-	camera_px = fx.camera_offset(fx_time(), params.get_value(ParamIds.FX_CAMERA_STRENGTH) if params != null else 0.5)
+	fx.params = params
+	fx.on_state(current_state)
+	camera_px = fx.camera_offset(fx_time(), params.get_value(ParamIds.FX_CAMERA_STRENGTH))
 
 
 ## Avance l'aperçu d'animation avec le temps réel (indépendant de la simulation, de la pause et du ralenti).

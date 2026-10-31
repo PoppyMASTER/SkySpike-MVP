@@ -14,8 +14,9 @@ const ALLOWED: Dictionary = {
 	"ai": ["core", "characters", "simulation", "gameplay"],
 	"animation": ["core", "data", "characters", "gameplay"],
 	"rendering": ["core", "characters", "simulation", "gameplay", "animation"],
-	"app": ["core", "data", "characters", "simulation", "gameplay", "input", "ai", "animation", "rendering"],
-	"debug": ["core", "data", "characters", "simulation", "gameplay", "input", "ai", "animation", "rendering", "app"],
+	"audio": ["core", "data", "gameplay"],
+	"app": ["core", "data", "characters", "simulation", "gameplay", "input", "ai", "animation", "rendering", "audio"],
+	"debug": ["core", "data", "characters", "simulation", "gameplay", "input", "ai", "animation", "rendering", "audio", "app"],
 }
 
 ## Interdits dans les couches qui doivent rester déterministes.

@@ -93,7 +93,7 @@ clip standard ; action sans clip standard → pose de repos ; chaque repli est j
 | --- | --- | --- |
 | `time_domain` | Comment l'état de la simulation choisit l'instant du clip (voir ci-dessous) | `seconds` (domaine inconnu : erreur + `seconds`) |
 | `loop` | Boucle (retour de la dernière pose vers la première) | faux |
-| `default_interpolation` | `linear` ou `smooth` (lissage) | `linear` |
+| `default_interpolation` | `linear`, `smooth` (lissage, arrêt sur chaque pose) ou `spline` (Hermite monotone : la vitesse est conservée à travers une pose quand le geste continue dans le même sens, sans dépassement) | `linear` |
 | `blend_in_s` | Durée du fondu depuis l'animation précédente | 0,08 s |
 | `grounded` | Les poses supposent un joueur au sol (le rendu pose alors les semelles sur le sol) ; faux = clip aérien | vrai |
 | `air_legs` | Si le joueur est en l'air, les jambes viennent de cette animation (ex. `jump`) | aucune |
@@ -123,6 +123,22 @@ l'AVANT ; os qui montent (torse, cou, tête) → angle positif = penché vers l'
 | Repère hors du clip, `window_start` inconnu | repère ignoré (erreur) |
 | Domaine `window` sans repère `impact` | 40 % de la durée (avertissement) |
 | `pose_mode` autre que `absolute` | `absolute` (erreur) |
+
+## Sons — `data/audio/cues.json` [J4.1 SJ2]
+
+```json
+{ "schema_version": 1, "cues": [ { "id": "serve_smash", "file": "", "volume_db": 0.0, "pitch_jitter": 0.03,
+  "synth": { "duration_s": 0.4, "tone_start_hz": 120, "tone_end_hz": 46, "tone_s": 0.3, "tone_gain": 1.0,
+             "noise_s": 0.07, "noise_gain": 0.8, "noise_brightness": 0.6, "click_hz": 2400, "click_gain": 0.4 } } ] }
+```
+
+| Champ | Rôle | Bornes |
+| --- | --- | --- |
+| `id` | `serve_ground`, `serve_float`, `serve_smash` (un son par type de service réel) | `^[a-z0-9_]+$` |
+| `file` | Fichier WAV ou OGG (`res://` ou `user://`) qui remplace la synthèse ; vide ou introuvable = synthèse (avertissement) | — |
+| `volume_db` | Volume propre du son, ajouté à `audio_volume_db` | −40 à 6 |
+| `pitch_jitter` | Variation de hauteur ± (tirée du numéro de tick, pas de hasard) | 0 à 0,3 |
+| `synth.*` | Recette provisoire : coup tonal glissant (`tone_*`), souffle filtré (`noise_*`, `noise_brightness` 0,01–1), clic (`click_*`). Trois niveaux d'intensité précalculés, pic ramené à −1 dBFS | voir `SoundCueLoader` |
 
 ## Paramètres — `data/params/param_defs.json`
 

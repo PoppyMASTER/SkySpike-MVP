@@ -18,6 +18,7 @@ func _ready() -> void:
 	_handle_capture_args()
 	_handle_serve_capture_args()
 	_handle_service_capture_args()
+	_handle_fx_args()
 
 
 ## `-- --sim N` : N matchs IA contre IA sans affichage (graines 1..N), résumé en console, puis quitte.
@@ -199,3 +200,22 @@ func _shot(runner: MatchRunner, path: String) -> void:
 	runner.view.show_states(runner.previous_state, runner.current_state, 1.0)
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(path)
+
+
+## `-- --capture-fx DOSSIER` (vignettes des effets activés / désactivés, visibilité du ballon) ou `-- --demo-fx`
+## (démonstration à enregistrer avec `--write-movie`) : voir FxCapture, puis quitte.
+func _handle_fx_args() -> void:
+	var args := OS.get_cmdline_user_args()
+	var i := args.find("--capture-fx")
+	if i < 0 and not args.has("--demo-fx"):
+		return
+	var runner: MatchRunner = get_child(0)
+	var tool := FxCapture.new(runner)
+	add_child(tool)
+	await get_tree().process_frame
+	if i >= 0 and i + 1 < args.size():
+		await tool.capture(args[i + 1])
+		get_tree().quit()
+	else:
+		await tool.demo()
+

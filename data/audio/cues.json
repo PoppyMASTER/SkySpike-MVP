@@ -1,0 +1,29 @@
+{
+ "schema_version": 1,
+ "cues": [
+  {
+   "id": "serve_ground",
+   "file": "",
+   "volume_db": -5.0,
+   "pitch_jitter": 0.04,
+   "synth": {"duration_s": 0.16, "tone_start_hz": 260.0, "tone_end_hz": 160.0, "tone_s": 0.09, "tone_gain": 0.75,
+     "noise_s": 0.02, "noise_gain": 0.3, "noise_brightness": 0.35, "click_hz": 1800.0, "click_gain": 0.2}
+  },
+  {
+   "id": "serve_float",
+   "file": "",
+   "volume_db": -3.0,
+   "pitch_jitter": 0.03,
+   "synth": {"duration_s": 0.09, "tone_start_hz": 950.0, "tone_end_hz": 520.0, "tone_s": 0.03, "tone_gain": 0.35,
+     "noise_s": 0.03, "noise_gain": 0.9, "noise_brightness": 0.85, "click_hz": 3200.0, "click_gain": 0.5}
+  },
+  {
+   "id": "serve_smash",
+   "file": "",
+   "volume_db": 0.0,
+   "pitch_jitter": 0.03,
+   "synth": {"duration_s": 0.4, "tone_start_hz": 120.0, "tone_end_hz": 46.0, "tone_s": 0.3, "tone_gain": 1.0,
+     "noise_s": 0.07, "noise_gain": 0.8, "noise_brightness": 0.6, "click_hz": 2400.0, "click_gain": 0.4}
+  }
+ ]
+}

@@ -1,6 +1,6 @@
 class_name MatchOverlay
 extends Node2D
-## Couche dessinée AU-DESSUS des mannequins : zones de contact, ballon, indicateur du joueur contrôlé,
+## Couche dessinée AU-DESSUS des mannequins : zones de contact, effets (FxOverlay, sous le ballon), ballon, indicateur du joueur contrôlé,
 ## noms d'état, tableau de score et outils de debug du rig (squelette, pivots, animation active).
 
 const COLOR_BALL := Color("f6f1de")
@@ -23,14 +23,16 @@ func _draw() -> void:
 	for i in state.players.size():
 		_draw_player_marks(i, state.players[i], k)
 	if state.ball_prediction != null:
-		_draw_ball_prediction(state.ball_prediction)
+		_draw_ball_prediction(state.ball_prediction, k)
 	if state.serve_preview != null:
 		_draw_serve_preview(state.serve_preview, k)
+	var ball := ball_screen()
+	var ball_px := maxf(3.0, state.ball_radius * k)
 	if view.fx_enabled():
-		_draw_trail()
-	_draw_ball(k)
+		FxOverlay.draw_under_ball(self, view, ball, ball_px)   # effets SOUS le ballon : il reste toujours visible
+	_draw_ball(ball, ball_px)
 	if view.fx_enabled():
-		_draw_impacts(k)
+		FxOverlay.draw_labels(self, view)
 	_draw_scoreboard(get_viewport_rect().size)
 	if view.preview_clip != null:
 		_draw_preview_info()
@@ -83,10 +85,19 @@ func _draw_preview_info() -> void:
 	draw_multiline_string(view.font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, -1, Color(0.75, 1.0, 0.85))
 
 
-## Trajectoire prévue du ballon, en transparence, tout le temps : points pâles et anneau là où il retombe
-## (vert = dans les lignes, orange = dehors, rouge = s'arrête dans le filet).
-func _draw_ball_prediction(pred: BallPrediction) -> void:
-	_draw_dotted(pred.path, Color(1, 1, 1, 0.22), 2.0)
+## Trajectoire prévue du ballon pendant l'échange (réglable) : pointillés pâles et repère de retombée (vert = dans les
+## lignes, rouge = dehors, croix = s'arrête dans le filet). Le repère se resserre à mesure que la retombée approche.
+## Il montre où va le ballon, jamais qui peut l'atteindre : aucune réception n'est garantie.
+func _draw_ball_prediction(pred: BallPrediction, k: float) -> void:
+	var mode := 2
+	var opacity := 0.22
+	if view.params != null:
+		mode = int(view.params.get_value(ParamIds.PREVIEW_RALLY_MODE))
+		opacity = view.params.get_value(ParamIds.PREVIEW_RALLY_OPACITY)
+	if mode <= 0:
+		return
+	if mode >= 2:
+		_draw_dotted(pred.path, Color(1, 1, 1, opacity), 2.0)
 	var color := COLOR_PREVIEW_OK if pred.lands_inside else COLOR_PREVIEW_BAD
 	var end := view.to_screen(pred.path[pred.path.size() - 1])
 	if pred.hits_net:
@@ -94,8 +105,14 @@ func _draw_ball_prediction(pred: BallPrediction) -> void:
 		draw_line(end + Vector2(-7, 7), end + Vector2(7, -7), Color(color, 0.8), 3.0)
 		return
 	var ground := view.to_screen(Vector2(pred.landing_x, 0.0))
-	draw_arc(ground, 11.0, 0.0, TAU, 24, Color(color, 0.7), 3.0, true)
-	draw_circle(ground, 4.0, Color(color, 0.45))
+	draw_arc(ground, landing_marker_radius(pred.flight_time, k), 0.0, TAU, 28, Color(color, 0.75), 3.0, true)
+	draw_circle(ground, 4.0, Color(color, 0.55))
+	draw_line(ground + Vector2(0, -16), ground + Vector2(0, -6), Color(color, 0.55), 2.0)
+
+
+## Rayon (px) du repère de retombée : large quand la retombée est lointaine, resserré juste avant.
+static func landing_marker_radius(flight_time: float, k: float) -> float:
+	return lerpf(0.12, 0.32, clampf(flight_time / 1.2, 0.0, 1.0)) * k
 
 
 ## Prévision du service : arc du lancer (points blancs), zone et point de frappe, trajectoire
@@ -165,63 +182,22 @@ func _draw_toss_arc(pv: ServePreview, k: float, tint: Color, opacity: float) -> 
 		draw_string(view.font, mid + Vector2(-110, 4), "frappe possible", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(COLOR_ZONE, 0.85 * opacity))
 
 
-## Traînée du ballon : plus rapide, plus épaisse et plus marquée ; elle s'efface avec le temps de simulation.
-func _draw_trail() -> void:
-	var trail_s: float = view.params.get_value(ParamIds.FX_TRAIL_S) if view.params != null else 0.4
-	if trail_s <= 0.0 or view.fx.trail.size() < 2:
-		return
-	var now := view.fx_time()
-	for i in range(1, view.fx.trail.size()):
-		var a: Dictionary = view.fx.trail[i - 1]
-		var b: Dictionary = view.fx.trail[i]
-		var strength := ImpactFx.trail_strength(float(b.v))
-		var fade := clampf(1.0 - (now - float(b.t)) / trail_s, 0.0, 1.0)
-		if strength <= 0.0 or fade <= 0.0:
-			continue
-		var color := Color(1, 1, 1).lerp(Color("ff9a3c"), strength)
-		draw_line(view.to_screen(a.p), view.to_screen(b.p), Color(color, 0.7 * fade * strength), ImpactFx.trail_width(float(b.v), 5.0), true)
-
-
-## Impacts : anneau et étincelles proportionnels à la vitesse (double anneau pour un smash), indicateur de vitesse.
-func _draw_impacts(k: float) -> void:
-	var now := view.fx_time()
-	var scale: float = view.params.get_value(ParamIds.FX_IMPACT_SCALE) if view.params != null else 1.0
-	var show_speed := view.params == null or view.params.get_value(ParamIds.FX_SPEED_INDICATOR) >= 0.5
-	for fx in view.fx.impacts:
-		var color := Color("ffffff").lerp(Color("ff7a3c"), fx.weight)
-		if fx.serve_kind == "float":
-			color = Color("ffe27a")
-		var center := view.to_screen(fx.position)
-		var p := ImpactFx.impact_progress(fx, now)
-		if p >= 0.0:
-			var radius := (0.25 + 0.55 * fx.weight) * scale * k * (0.25 + p)
-			draw_arc(center, radius, 0.0, TAU, 28, Color(color, 1.0 - p), 3.0, true)
-			if fx.serve_kind == "smash":
-				draw_arc(center, radius * 0.6, 0.0, TAU, 24, Color(color, 1.0 - p), 2.0, true)
-			var sparks := 6 + int(8.0 * fx.weight)
-			for i in sparks:
-				var angle := TAU * float(i) / float(sparks) + fx.direction.angle()
-				var dir := Vector2(cos(angle), -sin(angle))
-				draw_line(center + dir * radius * 0.7, center + dir * radius * (1.0 + 0.5 * fx.weight), Color(color, 1.0 - p), 2.0)
-		var age := now - fx.born
-		if show_speed and fx.action != "" and fx.action != "set" and fx.action != "receive" and age >= 0.0 and age <= ImpactFx.SPEED_LABEL_LIFE_S:
-			var fade := 1.0 - age / ImpactFx.SPEED_LABEL_LIFE_S
-			draw_string(view.font, center + Vector2(18, -44 - 14 * age), "%d km/h" % roundi(fx.speed * ImpactFx.MS_TO_KMH),
-				HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(color, fade))
-
-
+## Pointillés : réservés aux PRÉVISIONS (la traînée du mouvement passé est un ruban continu, voir FxOverlay).
 func _draw_dotted(path: PackedVector2Array, color: Color, radius: float) -> void:
 	for point in path:
 		draw_circle(view.to_screen(point), radius, color)
 
 
-func _draw_ball(k: float) -> void:
+## Position écran du ballon, interpolée entre les deux derniers ticks.
+func ball_screen() -> Vector2:
 	var s := view.current_state
 	var pos := s.ball_position
 	if view.previous_state != null and not s.ball_held:
 		pos = view.previous_state.ball_position.lerp(s.ball_position, view.alpha)
-	var c := view.to_screen(pos)
-	var r := maxf(3.0, s.ball_radius * k)
+	return view.to_screen(pos)
+
+
+func _draw_ball(c: Vector2, r: float) -> void:
 	draw_circle(c, r, COLOR_BALL)
 	draw_arc(c, r, 0.0, TAU, 24, COLOR_BALL_EDGE, 1.5, true)
 

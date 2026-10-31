@@ -37,7 +37,8 @@ Une couche ne peut utiliser que les couches listées. Vérifié automatiquement
 | `ai` | `MatchState` → `PlayerIntent` | core, characters, simulation, gameplay |
 | `animation` (J4) | Clips, lecteur, IK, morphologie du rig | core, data, characters, gameplay |
 | `rendering` | Dessin, interpolation, caméra, effets | core, characters, simulation, gameplay, animation |
-| `app` | Assemblage : `GameData`, `MatchRunner`, `main.gd` | tout sauf debug |
+| `audio` (J4.1 SJ2) | Sons de frappe : écoute les événements, n'écrit jamais dans la simulation | core, data, gameplay |
+| `app` | Assemblage : `GameData`, `MatchRunner` (crée `MatchAudio` en nœud enfant, aucun autoload), `main.gd` | tout sauf debug |
 | `debug` | Panneau sandbox, diagnostics | tout (écrit seulement via `ParamStore` et l'API de `MatchRunner`) |
 
 Seule la couche `app` charge des scripts ou scènes par chemin ; ailleurs, on passe par `class_name`.

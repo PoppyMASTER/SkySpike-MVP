@@ -21,6 +21,8 @@ var event_log: Array[MatchEvent] = []
 ## Tampon des entrées humaines (un seul joueur contrôlé).
 var input := InputLatch.new()
 var ai: AiDirector
+## Sons de frappe (couche audio) : lisent les événements, n'écrivent jamais dans la simulation.
+var audio: MatchAudio
 ## Slot du joueur contrôlé : 0 attaquant, 1 passeur, 2 défenseur (équipe bleue) ; -1 = IA contre IA.
 @export var human_slot := 0
 
@@ -35,6 +37,9 @@ func _ready() -> void:
 	if data == null:
 		data = GameData.load_default()
 	InputMapper.register_actions()
+	audio = MatchAudio.new(data.params)
+	audio.name = "MatchAudio"
+	add_child(audio)
 	restart(start_seed)
 
 
@@ -51,6 +56,8 @@ func restart(seed_value: int) -> void:
 	current_state = sim.state()
 	previous_state = current_state
 	event_log.clear()
+	if audio != null:
+		audio.reset()
 	if view != null:
 		view.params = data.params
 		view.setup_players(data.clips, lineup)
@@ -98,10 +105,14 @@ func run_one_tick(intents: Array[PlayerIntent] = []) -> void:
 		events_emitted.emit(events)
 		if view != null:
 			view.on_events(events, current_state)
+		if audio != null:
+			audio.on_events(events, current_state)
 
 
 func set_paused(paused: bool) -> void:
 	clock.paused = paused
+	if audio != null:
+		audio.set_paused(paused)
 
 
 func is_paused() -> bool:
