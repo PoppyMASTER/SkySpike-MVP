@@ -1,0 +1,112 @@
+{
+ "schema_version": 1,
+ "id": "serve_v1",
+ "action": "serve",
+ "duration_s": 1.1,
+ "loop": false,
+ "time_domain": "window",
+ "pose_mode": "absolute",
+ "default_interpolation": "smooth",
+ "keyframes": [
+  {
+   "t": 0.0,
+   "pose": {
+    "thigh_l": -0.1396,
+    "shin_l": 0.2443,
+    "thigh_r": -0.1047,
+    "shin_r": 0.2094,
+    "upper_arm_l": -1.0472,
+    "forearm_l": -0.9599,
+    "hand_l": 0.0,
+    "upper_arm_r": 0.1745,
+    "forearm_r": -0.3491,
+    "hand_r": 0.0,
+    "torso": 0.0698,
+    "neck": -0.0349,
+    "head": -0.1047,
+    "foot_l": -0.1047,
+    "foot_r": -0.1047
+   }
+  },
+  {
+   "t": 0.35,
+   "pose": {
+    "thigh_l": -0.2094,
+    "shin_l": 0.3491,
+    "thigh_r": -0.1745,
+    "shin_r": 0.3142,
+    "upper_arm_l": -2.8798,
+    "forearm_l": -0.0873,
+    "hand_l": 0.0,
+    "upper_arm_r": 2.2689,
+    "forearm_r": -1.9199,
+    "hand_r": 0.0,
+    "torso": -0.1745,
+    "neck": -0.0698,
+    "head": -0.2094,
+    "foot_l": -0.1396,
+    "foot_r": -0.1396
+   }
+  },
+  {
+   "t": 0.7,
+   "pose": {
+    "thigh_l": -0.0698,
+    "shin_l": 0.1047,
+    "thigh_r": -0.0524,
+    "shin_r": 0.0873,
+    "upper_arm_l": 0.1745,
+    "forearm_l": -0.5236,
+    "hand_l": 0.0,
+    "upper_arm_r": -2.8798,
+    "forearm_r": -0.0698,
+    "hand_r": -0.1745,
+    "torso": 0.2793,
+    "neck": 0.0698,
+    "head": 0.0349,
+    "foot_l": -0.0349,
+    "foot_r": -0.0349
+   }
+  },
+  {
+   "t": 1.1,
+   "pose": {
+    "thigh_l": -0.1745,
+    "shin_l": 0.2793,
+    "thigh_r": -0.1396,
+    "shin_r": 0.2443,
+    "upper_arm_l": 0.2618,
+    "forearm_l": -0.5236,
+    "hand_l": 0.0,
+    "upper_arm_r": -0.7854,
+    "forearm_r": -0.2443,
+    "hand_r": -0.0873,
+    "torso": 0.3491,
+    "neck": 0.0698,
+    "head": 0.0349,
+    "foot_l": -0.1047,
+    "foot_r": -0.1047
+   }
+  }
+ ],
+ "events": [
+  {
+   "t": 0.0,
+   "type": "visual_marker",
+   "name": "hold"
+  },
+  {
+   "t": 0.35,
+   "type": "visual_marker",
+   "name": "toss"
+  },
+  {
+   "t": 0.7,
+   "type": "contact_marker",
+   "name": "impact"
+  }
+ ],
+ "window_start": "toss",
+ "air_legs": "jump",
+ "blend_in_s": 0.06
+}

@@ -4,6 +4,8 @@ extends RefCounted
 ## le rendu, l'IA et le debug ne voient que ceci, jamais les objets internes.
 
 var tick := 0
+## Durée d'un tick (s) : sert au rendu à convertir le tick en temps pour les animations.
+var tick_seconds := 0.0
 var seed_value := 0
 var ball_position := Vector2.ZERO
 var ball_velocity := Vector2.ZERO

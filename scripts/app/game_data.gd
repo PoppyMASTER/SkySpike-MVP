@@ -6,6 +6,7 @@ extends RefCounted
 var params: ParamStore
 var presets := PresetStore.new()
 var characters: CharacterRepository
+var clips := ClipLibrary.new()
 var issues: Array[LoadIssue] = []
 
 
@@ -24,10 +25,14 @@ func load_from(param_defs_path: String, builtin_presets: String, user_presets: S
 	characters = CharacterRepository.new(data_root)
 	characters.load_all()
 	issues.append_array(characters.issues)
+	clips.load_all(data_root)
+	issues.append_array(clips.issues)
+	for id: String in characters.ids():
+		clips.validate_overrides(characters.get_character(id), issues)
 	for issue: LoadIssue in issues:
 		issue.write_to_log()
-	GameLog.info("Données", "%d paramètres, %d presets, %d personnages, %d problème(s)" % [
-		params.ids().size(), presets.ids().size(), characters.ids().size(), issues.size()])
+	GameLog.info("Données", "%d paramètres, %d presets, %d personnages, %d clips, %d problème(s)" % [
+		params.ids().size(), presets.ids().size(), characters.ids().size(), clips.clips.size(), issues.size()])
 
 
 ## Applique un preset (base comprise) par-dessus les valeurs par défaut.

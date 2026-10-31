@@ -1,0 +1,81 @@
+{
+ "schema_version": 1,
+ "id": "spike_v1",
+ "action": "spike",
+ "duration_s": 0.6,
+ "loop": false,
+ "time_domain": "window",
+ "pose_mode": "absolute",
+ "default_interpolation": "smooth",
+ "keyframes": [
+  {
+   "t": 0.0,
+   "pose": {
+    "thigh_r": -0.3491,
+    "shin_r": 1.0472,
+    "foot_r": 0.4363,
+    "thigh_l": 0.1745,
+    "shin_l": 0.8727,
+    "foot_l": 0.4363,
+    "torso": -0.2443,
+    "neck": -0.0698,
+    "head": -0.1396,
+    "upper_arm_r": 2.4435,
+    "forearm_r": -2.0944,
+    "hand_r": 0.0,
+    "upper_arm_l": -1.7453,
+    "forearm_l": -0.3491,
+    "hand_l": 0.0
+   }
+  },
+  {
+   "t": 0.22,
+   "pose": {
+    "thigh_r": -0.5236,
+    "shin_r": 0.6981,
+    "foot_r": 0.3491,
+    "thigh_l": -0.0873,
+    "shin_l": 0.5236,
+    "foot_l": 0.3491,
+    "torso": 0.3491,
+    "neck": 0.0698,
+    "head": 0.0873,
+    "upper_arm_r": -2.7925,
+    "forearm_r": -0.0873,
+    "hand_r": -0.1745,
+    "upper_arm_l": 0.5236,
+    "forearm_l": -0.7854,
+    "hand_l": 0.0
+   }
+  },
+  {
+   "t": 0.6,
+   "pose": {
+    "thigh_r": -0.6109,
+    "shin_r": 0.9599,
+    "foot_r": 0.2618,
+    "thigh_l": -0.1745,
+    "shin_l": 0.6981,
+    "foot_l": 0.2618,
+    "torso": 0.4363,
+    "neck": 0.0698,
+    "head": 0.0873,
+    "upper_arm_r": -0.6981,
+    "forearm_r": -0.2618,
+    "hand_r": -0.0873,
+    "upper_arm_l": 0.3491,
+    "forearm_l": -0.6981,
+    "hand_l": 0.0
+   }
+  }
+ ],
+ "events": [
+  {
+   "t": 0.22,
+   "type": "contact_marker",
+   "name": "impact"
+  }
+ ],
+ "grounded": false,
+ "blend_in_s": 0.03
+}

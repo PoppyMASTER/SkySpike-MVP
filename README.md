@@ -3,9 +3,10 @@
 Sandbox de volleyball 2D 3 contre 3 (vue de profil), sous **Godot 4.7.2 / GDScript**.
 Projet neuf, distinct de l'ancien SkySpike (archivé : dépôt `PoppyMASTER/Spike`, commit `5c3b1b7`).
 
-**État : jalon J3 (gameplay 3v3).** Six silhouettes provisoires jouent un match complet de 15 points :
-service, réception, passe, smash, feinte, contre, arbitre et score. Vous pilotez un joueur bleu (attaquant,
-passeur ou défenseur, au choix dans F1) ; les cinq autres sont menés par l'IA. L'animation articulée arrive au J4.
+**État : jalon J4 (animation).** Six mannequins humanoïdes gris anthracite aux proportions naturelles, articulés
+(`Skeleton2D` / `Bone2D`), jouent un match complet : course, saut, réception, passe, service, smash (une main ou marteau à
+deux mains), feinte, contre. Liseré bleu (équipe du joueur) ou rouge, indicateur jaune sur le joueur contrôlé.
+Les animations sont des clips JSON calés sur la simulation (jamais l'inverse). Le plongeon reste hors MVP.
 
 ## Lancer
 
@@ -19,8 +20,8 @@ godot --headless --path . -s tests/run_tests.gd -- determinism   # filtre par no
 En jeu (touches provisoires) : **← → / Q D** bouger · **Espace** sauter, puis **Espace** en l'air = smash ·
 **J** réception (au sol), contre (au filet) ou feinte (en l'air) · **K** passe · **L** service.
 Manette : stick gauche, **A** saut/smash, **X** réception/contre/feinte, **B** passe, **Y** service.
-Debug : **F1** panneau sandbox (joueur contrôlé, visée assistée/manuelle) · **F2** zones de contact · **P** pause · **N** un tick · **R** relancer.
-Outils : `-- --sim N` joue N matchs IA contre IA et résume ; `-- --capture DOSSIER` enregistre des captures.
+Debug : **F1** panneau sandbox (joueur contrôlé, visée, onglet Animation) · **F2** zones · **F3** squelette · **F4** pivots · **F5** animation active · **P** pause · **N** un tick · **R** relancer.
+Outils : `-- --sim N` joue N matchs IA contre IA et résume ; `-- --capture DOSSIER` enregistre des captures ; `-- --anim-sheet DOSSIER` produit les planches-contact des clips.
 
 ## Où lire quoi
 

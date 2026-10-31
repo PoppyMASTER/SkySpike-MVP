@@ -115,10 +115,14 @@ func snapshot(p: ParamStore) -> PlayerSnapshot:
 	s.spike_radius = spike.radius
 	if WINDOW_STATES.has(state):
 		var spec := ContactSpec.of(_kind, p)
+		s.action_ideal = spec.ideal
+		s.action_length = spec.t_off
 		if state_time >= spec.t_on and state_time <= spec.t_off:
 			s.active_kind = String(_kind)
 			s.active_center = spec.center(body.position, facing)
 			s.active_radius = spec.radius
+	elif state == Enums.ActionState.RECOVER:
+		s.action_length = _recover_len
 	elif state == Enums.ActionState.BLOCK_AIR:
 		s.active_kind = "block"
 		s.active_center = body.position + Vector2(facing * p.get_value(ParamIds.BLOCK_ZONE_DX), p.get_value(ParamIds.BLOCK_ZONE_DY))

@@ -83,6 +83,7 @@ func tick(intents: Array[PlayerIntent] = []) -> Array[MatchEvent]:
 func state() -> MatchState:
 	var s := MatchState.new()
 	s.tick = tick_count
+	s.tick_seconds = dt
 	s.seed_value = rng.master_seed
 	s.ball_position = ball.position
 	s.ball_velocity = ball.velocity

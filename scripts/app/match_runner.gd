@@ -51,6 +51,8 @@ func restart(seed_value: int) -> void:
 	current_state = sim.state()
 	previous_state = current_state
 	event_log.clear()
+	if view != null:
+		view.setup_players(data.clips, lineup)
 	restarted.emit(seed_value)
 	GameLog.info("Match", "nouveau match, graine %d, %d ticks/s" % [seed_value, roundi(1.0 / clock.dt)])
 

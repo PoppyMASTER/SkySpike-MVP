@@ -1,0 +1,16 @@
+{
+ "schema_version": 1,
+ "id": "standard_v1",
+ "actions": {
+  "idle": "idle_v1",
+  "run": "run_v1",
+  "jump": "jump_v1",
+  "land": "land_v1",
+  "receive": "receive_v1",
+  "set": "set_v1",
+  "spike": "spike_v1",
+  "serve": "serve_v1",
+  "block": "block_v1",
+  "feint": "feint_v1"
+ }
+}

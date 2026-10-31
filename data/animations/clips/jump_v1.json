@@ -1,0 +1,76 @@
+{
+ "schema_version": 1,
+ "id": "jump_v1",
+ "action": "jump",
+ "duration_s": 1.0,
+ "loop": false,
+ "time_domain": "air_velocity",
+ "pose_mode": "absolute",
+ "default_interpolation": "smooth",
+ "keyframes": [
+  {
+   "t": 0.0,
+   "pose": {
+    "thigh_l": 0.0,
+    "shin_l": 0.0,
+    "thigh_r": 0.0,
+    "shin_r": 0.0,
+    "foot_l": 0.6981,
+    "foot_r": 0.6981,
+    "upper_arm_l": -2.5307,
+    "upper_arm_r": -2.7053,
+    "forearm_l": -0.1745,
+    "forearm_r": -0.1745,
+    "hand_l": -0.0873,
+    "hand_r": -0.0873,
+    "torso": 0.0,
+    "neck": 0.0,
+    "head": -0.1047
+   }
+  },
+  {
+   "t": 0.5,
+   "pose": {
+    "thigh_r": -0.6109,
+    "shin_r": 0.9599,
+    "foot_r": 0.2618,
+    "thigh_l": -0.2618,
+    "shin_l": 0.6981,
+    "foot_l": 0.2618,
+    "upper_arm_l": -1.8326,
+    "upper_arm_r": -2.0944,
+    "forearm_l": -0.5236,
+    "forearm_r": -0.6109,
+    "hand_l": -0.0873,
+    "hand_r": -0.0873,
+    "torso": 0.1396,
+    "neck": 0.0,
+    "head": 0.0
+   }
+  },
+  {
+   "t": 1.0,
+   "pose": {
+    "thigh_r": -0.2094,
+    "shin_r": 0.2443,
+    "foot_r": -0.1745,
+    "thigh_l": 0.0698,
+    "shin_l": 0.1745,
+    "foot_l": -0.1396,
+    "upper_arm_l": -1.2217,
+    "upper_arm_r": -1.3963,
+    "forearm_l": -0.3491,
+    "forearm_r": -0.3491,
+    "hand_l": -0.0698,
+    "hand_r": -0.0698,
+    "torso": 0.0698,
+    "neck": 0.0,
+    "head": 0.0
+   }
+  }
+ ],
+ "events": [],
+ "grounded": false,
+ "air_ref_speed": 9.5,
+ "blend_in_s": 0.06
+}

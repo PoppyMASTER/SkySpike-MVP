@@ -19,7 +19,7 @@ const ALLOWED: Dictionary = {
 }
 
 ## Interdits dans les couches qui doivent rester déterministes.
-const DETERMINISTIC_LAYERS: Array[String] = ["simulation", "gameplay", "ai"]
+const DETERMINISTIC_LAYERS: Array[String] = ["simulation", "gameplay", "ai", "animation"]
 const FORBIDDEN_PATTERNS: Array[String] = [
 	"\\brandf\\(", "\\brandi\\(", "\\brandomize\\(", "\\brandf_range\\(", "\\brandi_range\\(",
 	"RandomNumberGenerator", "\\bTime\\.", "\\bOS\\.get_ticks", "_process\\(", "_physics_process\\(",

@@ -2,7 +2,7 @@ class_name SandboxPanel
 extends PanelContainer
 ## Panneau de réglage (F1). Ne met pas le match en pause. Modifie les paramètres
 ## uniquement via ParamStore et contrôle la simulation via l'API de MatchRunner.
-## Touches : F1 panneau, F2 zones de contact, P pause, N un tick, R relancer (même graine).
+## Touches : F1 panneau, F2 zones de contact, F3 squelette, F4 pivots, F5 animation active, P pause, N un tick, R relancer.
 ## Onglets : Contrôle (contrôles + presets), un onglet par groupe de paramètres, Données.
 
 const PANEL_WIDTH := 460.0
@@ -47,6 +47,7 @@ func _build() -> void:
 	_tabs = TabContainer.new()
 	add_child(_tabs)
 	_tabs.add_child(_scrolled("Contrôle", _build_controls()))
+	_tabs.add_child(_scrolled("Animation", _build_animation()))
 	var groups: Dictionary = {}
 	for id: StringName in runner.data.params.ids():
 		var def := runner.data.params.get_def(id)
@@ -74,12 +75,87 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_F2:
 			if runner.view != null:
 				runner.view.show_zones = not runner.view.show_zones
+		KEY_F3:
+			if runner.view != null:
+				runner.view.show_skeleton = not runner.view.show_skeleton
+		KEY_F4:
+			if runner.view != null:
+				runner.view.show_pivots = not runner.view.show_pivots
+		KEY_F5:
+			if runner.view != null:
+				runner.view.show_anim_info = not runner.view.show_anim_info
 		KEY_P:
 			runner.set_paused(not runner.is_paused())
 		KEY_N:
 			runner.step_once()
 		KEY_R:
 			runner.restart(runner.current_state.seed_value)
+
+
+# ------------------------------------------------------------------ onglet Animation
+## Affichage du rig et test d'une animation isolée. La vitesse réglée ici ne concerne QUE les animations :
+## la vitesse de la simulation reste celle de l'onglet Contrôle (×0,25 / ×0,5 / ×1).
+func _build_animation() -> VBoxContainer:
+	var view := runner.view
+	var box := VBoxContainer.new()
+	box.add_child(_heading("Affichage"))
+	for entry: Array in [["Zones de contact (F2)", "show_zones"], ["Squelette (F3)", "show_skeleton"],
+			["Pivots des articulations (F4)", "show_pivots"], ["Animation active et progression (F5)", "show_anim_info"]]:
+		var check := CheckBox.new()
+		check.text = entry[0]
+		var property: String = entry[1]
+		check.button_pressed = view.get(property)
+		check.toggled.connect(func(on: bool) -> void: view.set(property, on))
+		box.add_child(check)
+	box.add_child(_heading("Vitesse de lecture des animations (match)"))
+	var speed_row := HBoxContainer.new()
+	box.add_child(speed_row)
+	var speed := HSlider.new()
+	speed.min_value = 0.1
+	speed.max_value = 3.0
+	speed.step = 0.05
+	speed.value = view.anim_speed
+	speed.custom_minimum_size = Vector2(240, 24)
+	var speed_label := Label.new()
+	speed_label.text = "×%.2f" % view.anim_speed
+	speed.value_changed.connect(func(v: float) -> void:
+		view.anim_speed = v
+		speed_label.text = "×%.2f" % v)
+	speed_row.add_child(speed)
+	speed_row.add_child(speed_label)
+	box.add_child(_heading("Tester une animation isolée"))
+	var clips := OptionButton.new()
+	for id in runner.data.clips.clip_ids():
+		clips.add_item(id)
+	box.add_child(clips)
+	var play_row := HBoxContainer.new()
+	box.add_child(play_row)
+	play_row.add_child(_button("Lancer", func() -> void:
+		var clip := runner.data.clips.get_clip(clips.get_item_text(clips.selected))
+		if clip != null:
+			view.start_preview(clip)))
+	play_row.add_child(_button("Pause / reprise", func() -> void: view.preview_playing = not view.preview_playing))
+	play_row.add_child(_button("Arrêter", view.stop_preview))
+	var preview_row := HBoxContainer.new()
+	box.add_child(preview_row)
+	var preview_speed := HSlider.new()
+	preview_speed.min_value = 0.1
+	preview_speed.max_value = 3.0
+	preview_speed.step = 0.05
+	preview_speed.value = view.preview_speed
+	preview_speed.custom_minimum_size = Vector2(240, 24)
+	var preview_label := Label.new()
+	preview_label.text = "×%.2f" % view.preview_speed
+	preview_speed.value_changed.connect(func(v: float) -> void:
+		view.preview_speed = v
+		preview_label.text = "×%.2f" % v)
+	preview_row.add_child(preview_speed)
+	preview_row.add_child(preview_label)
+	box.add_child(_button("Valeurs par défaut (vitesses ×1)", func() -> void:
+		view.reset_animation_settings()
+		speed.value = 1.0
+		preview_speed.value = 1.0))
+	return box
 
 
 # ------------------------------------------------------------------ onglet Simulation
