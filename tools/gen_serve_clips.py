@@ -128,14 +128,16 @@ J_OPEN = pose(upper(-0.32, -0.42, -2.5, -2.65, 2.35, 0.7), air(-0.40, 0.80, 0.45
 clip("serve_jump_v1", "serve_jump", 0.24, "seconds", [(0.0, J_SQ), (0.06, J_EXT), (0.24, J_OPEN)],
      [(0.0, "squash"), (0.06, "extension"), (0.24, "cock")], blend_in_s=0.03)
 
+# Bras qui ne frappe pas (le bras « du fond ») : il guide vers le ballon à l'armé, puis se RABAT vers la hanche et passe
+# en arrière pendant la frappe (rotation du buste) ; il ne reste jamais devant après l'impact.
 # --- service au sol (sobre) : poids sur la jambe arrière (pointe avant levée) -> jambe avant (talon arrière levé) ;
 # coude armé derrière l'épaule puis bras qui se tend vers le haut et l'avant, geste mesuré.
 G_COCK = pose(upper(-0.20, -0.38, -2.45, -2.6, 2.05, 0.55), stance(0.88, phl=-0.22))
 G_LOAD = pose(upper(-0.14, -0.32, -2.1, -2.45, 2.3, 0.7), stance(0.88, phl=-0.10))
-G_ACC = pose(upper(0.08, -0.22, -1.2, -1.9, 3.05, 1.55), stance(0.88, phr=0.15))
-G_IMP = pose(upper(0.24, -0.12, -0.55, -1.55, -2.80, -2.95), stance(0.89, phr=0.35))
-G_FOL = pose(upper(0.38, 0.05, 0.25, -0.7, -0.85, -1.25), stance(0.87, phr=0.55))
-G_END = pose(upper(0.18, 0.0, 0.1, -0.35, -0.35, -0.75), stance(0.89, phr=0.30))
+G_ACC = pose(upper(0.08, -0.22, -0.9, -1.85, 3.05, 1.55), stance(0.88, phr=0.15))
+G_IMP = pose(upper(0.24, -0.12, 0.25, -0.35, -2.80, -2.95), stance(0.89, phr=0.35))
+G_FOL = pose(upper(0.38, 0.05, 0.55, 0.05, -0.85, -1.25), stance(0.87, phr=0.55))
+G_END = pose(upper(0.18, 0.0, 0.3, -0.15, -0.35, -0.75), stance(0.89, phr=0.30))
 clip("serve_ground_v1", "serve_ground", 0.75, "window",
      [(0.0, COCK), (0.06, G_COCK), (0.13, G_LOAD), (0.19, G_ACC), (0.24, G_IMP), (0.35, G_FOL), (0.75, G_END)],
      [(0.0, "cock"), (0.24, "impact"), (0.35, "follow")], window_start="cock", blend_in_s=0.06)
@@ -147,10 +149,10 @@ F_LEGS_A = air(-0.30, 0.55, 0.45, 0.10, 0.75, 0.5)
 F_LEGS_B = air(-0.20, 0.35, 0.40, 0.0, 0.45, 0.45)
 F_COCK = pose(upper(-0.18, -0.40, -2.5, -2.65, 2.05, 0.55), F_LEGS_A)
 F_LOAD = pose(upper(-0.16, -0.36, -2.25, -2.55, 2.3, 0.7), F_LEGS_A)
-F_ACC = pose(upper(0.0, -0.22, -1.3, -2.0, 3.0, 2.05), F_LEGS_B)
-F_IMP = pose(upper(0.12, -0.12, -0.6, -1.6, -2.75, -2.82), F_LEGS_B)
-F_STOP = pose(upper(0.16, -0.08, -0.4, -1.4, -2.05, -2.15), F_LEGS_B)
-F_END = pose(upper(0.10, -0.05, -0.3, -1.1, -1.7, -1.95), air(-0.25, 0.30, 0.35, 0.05, 0.35, 0.4))
+F_ACC = pose(upper(0.0, -0.22, -0.9, -1.9, 3.0, 2.05), F_LEGS_B)
+F_IMP = pose(upper(0.12, -0.12, 0.2, -0.45, -2.75, -2.82), F_LEGS_B)
+F_STOP = pose(upper(0.16, -0.08, 0.35, -0.25, -2.05, -2.15), F_LEGS_B)
+F_END = pose(upper(0.10, -0.05, 0.2, -0.35, -1.7, -1.95), air(-0.25, 0.30, 0.35, 0.05, 0.35, 0.4))
 clip("serve_float_v1", "serve_float", 0.55, "window",
      [(0.0, J_OPEN), (0.05, F_COCK), (0.09, F_LOAD), (0.15, F_ACC), (0.20, F_IMP), (0.27, F_STOP), (0.55, F_END)],
      [(0.0, "cock"), (0.20, "impact"), (0.27, "follow")], window_start="cock", blend_in_s=0.04)
@@ -160,11 +162,11 @@ clip("serve_float_v1", "serve_float", 0.55, "window",
 # frappe haute, buste qui se referme fort, jambes qui passent devant, bras qui traverse jusqu'à la hanche.
 S_COCK = pose(upper(-0.50, -0.45, -2.45, -2.6, 2.35, 0.65), air(-0.45, 0.95, 0.45, 0.18, 1.15, 0.55))
 S_LOAD = pose(upper(-0.52, -0.45, -2.2, -2.5, 2.45, 0.7), air(-0.45, 1.0, 0.45, 0.25, 1.25, 0.55))
-S_ACC = pose(upper(-0.05, -0.25, -1.0, -1.8, -2.90, 1.78), air(-0.45, 0.80, 0.4, 0.15, 1.0, 0.5))
-S_IMP = pose(upper(0.38, -0.08, -0.25, -1.35, -2.82, -2.92), air(-0.55, 0.55, 0.35, -0.25, 0.65, 0.45))
-S_THRU = pose(upper(0.72, 0.15, 0.45, -0.4, -1.05, -1.55), air(-0.70, 0.75, 0.3, -0.45, 0.80, 0.4))
-S_FOL = pose(upper(0.62, 0.12, 0.55, -0.2, -0.25, -0.75), air(-0.55, 0.80, 0.25, -0.30, 0.85, 0.35))
-S_END = pose(upper(0.35, 0.05, 0.2, -0.5, -0.15, -0.55), air(-0.40, 0.55, 0.2, -0.20, 0.60, 0.25))
+S_ACC = pose(upper(-0.05, -0.25, -0.6, -1.6, -2.90, 1.78), air(-0.45, 0.80, 0.4, 0.15, 1.0, 0.5))
+S_IMP = pose(upper(0.38, -0.08, 0.45, -0.15, -2.82, -2.92), air(-0.55, 0.55, 0.35, -0.25, 0.65, 0.45))
+S_THRU = pose(upper(0.72, 0.15, 0.7, 0.2, -1.05, -1.55), air(-0.70, 0.75, 0.3, -0.45, 0.80, 0.4))
+S_FOL = pose(upper(0.62, 0.12, 0.65, 0.1, -0.25, -0.75), air(-0.55, 0.80, 0.25, -0.30, 0.85, 0.35))
+S_END = pose(upper(0.35, 0.05, 0.3, -0.3, -0.15, -0.55), air(-0.40, 0.55, 0.2, -0.20, 0.60, 0.25))
 clip("serve_smash_v1", "serve_smash", 0.9, "window",
      [(0.0, J_OPEN), (0.05, S_COCK), (0.10, S_LOAD), (0.175, S_ACC), (0.25, S_IMP), (0.33, S_THRU), (0.52, S_FOL),
       (0.9, S_END)],
