@@ -19,6 +19,7 @@ func _ready() -> void:
 	_handle_serve_capture_args()
 	_handle_service_capture_args()
 	_handle_fx_args()
+	_handle_anim_video_args()
 
 
 ## `-- --sim N` : N matchs IA contre IA sans affichage (graines 1..N), résumé en console, puis quitte.
@@ -218,4 +219,18 @@ func _handle_fx_args() -> void:
 		get_tree().quit()
 	else:
 		await tool.demo()
+
+
+## `-- --anim-video TYPE VUE` (TYPE = sol | flottant | smash, VUE = normal | debug), avec `--write-movie` :
+## vidéo de référence d'un service (voir AnimVideo et ANIMATION_HANDOFF.md), puis quitte.
+func _handle_anim_video_args() -> void:
+	var args := OS.get_cmdline_user_args()
+	var i := args.find("--anim-video")
+	if i < 0 or i + 2 >= args.size():
+		return
+	var runner: MatchRunner = get_child(0)
+	var tool := AnimVideo.new(runner)
+	add_child(tool)
+	await get_tree().process_frame
+	await tool.record(args[i + 1], args[i + 2])
 
